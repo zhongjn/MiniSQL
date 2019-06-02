@@ -1,0 +1,41 @@
+#include "case.h"
+#include "../catalog_manager.h"
+
+TEST_CASE(catalog) {
+   
+    {
+        BlockManager bm;
+        CatalogManager cm(&bm);
+
+        Nullable<Relation> rt = cm.get_relation("test_table");
+        if (rt.null()) {
+            Relation rel("test_table");
+            Field f_id("id", Type::create_INT());
+            f_id.unique = true;
+            f_id.primary_key = true;
+            rel.fields.push_back(f_id);
+            rel.fields.push_back(Field("name", Type::create_CHAR(20)));
+            rel.fields.push_back(Field("contact", Type::create_CHAR(20)));
+            cm.add_relation(rel);
+        }
+    }
+
+    {
+        BlockManager bm;
+        CatalogManager cm(&bm);
+
+        Nullable<Relation> rel = cm.get_relation("test_table");
+        assert(!rel.null(),"Relation not saved.");
+        assert(rel.value().name == "test_table", "relation name");
+
+        auto& fields = rel.value().fields;
+        assert(fields.size() == 3, "field count");
+
+        auto& f0 = fields[0];
+        assert(f0.name == "id" && f0.primary_key && f0.unique && f0.type.tag == Type::Tag::INT && f0.offset == 0, "field info");
+        auto& f1 = fields[1];
+        assert(f1.name == "name" && !f1.primary_key && !f1.unique && f1.type.tag == Type::Tag::CHAR && f1.type.CHAR.len == 20 && f1.offset == 4, "field info");
+        auto& f2 = fields[2];
+        assert(f2.name == "contact" && !f2.primary_key && !f2.unique && f2.type.tag == Type::Tag::CHAR && f2.type.CHAR.len == 20 && f2.offset == 24, "field info");
+    }
+}
