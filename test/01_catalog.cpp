@@ -1,4 +1,4 @@
-#include "case.h"
+#include "test.h"
 #include "../catalog_manager.h"
 
 TEST_CASE(catalog) {

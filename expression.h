@@ -3,10 +3,9 @@
 #include <memory>
 
 class Expression {
-
 public:
     virtual const Type& type() = 0;
-    virtual const string& name() { return "test_name"; };
+    string name = "test_name";
     virtual Value eval(const Record& record) = 0;
     virtual void resolve(const Relation& rel) = 0;
 };
@@ -76,7 +75,7 @@ private:
     unique_ptr<Expression> _r1, _r2;
 
 public:
-    BinaryExpression(Operator op, unique_ptr<Expression> r1, unique_ptr<Expression> r2) : 
+    BinaryExpression(Operator op, unique_ptr<Expression> r1, unique_ptr<Expression> r2) :
         _op(op), _r1(move(r1)), _r2(move(r2)) {}
     Value eval(const Record& record);
     const Type& type() { return _type; }

@@ -184,3 +184,8 @@ unique_ptr<To> static_cast_unique_ptr(unique_ptr<From>&& old) {
     return unique_ptr<To>{static_cast<To*>(old.release())};
     //conversion: unique_ptr<FROM>->FROM*->TO*->unique_ptr<TO>
 }
+
+struct Table {
+    Relation relation;
+    vector<Record> records;
+};

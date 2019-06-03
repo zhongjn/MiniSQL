@@ -67,8 +67,13 @@ class ProjectScanner : public Scanner {
     vector<unique_ptr<Expression>> _fields;
     Relation _rel_out;
     Record _cur_record;
+    void resolve(const Relation& rel) {
+        for (auto& f : _fields) {
+            f->resolve(rel);
+        }
+    }
 public:
-    ProjectScanner(vector<unique_ptr<Expression>> fields);;
+    ProjectScanner(unique_ptr<Scanner> from, vector<unique_ptr<Expression>> fields);
     Record& current() { return _cur_record; }
     bool next();
     const Relation& rel_out() { return _rel_out; }

@@ -1,8 +1,8 @@
-#include "case.h"
+#include "test.h"
 #include "../scanner.h"
 #include "../record_manager.h"
 
-TEST_CASE(filter) {
+TEST_CASE(scanner_disk_filter) {
     BlockManager bm;
     RecordManager rm(&bm);
 
@@ -59,4 +59,35 @@ TEST_CASE(filter) {
     }
     string a;
     string b;
+}
+
+TEST_CASE(scanner_project) {
+    BlockManager bm;
+    RecordManager rm(&bm);
+
+    Relation rel("test_table");
+    Field f_id("id", Type::create_INT());
+    f_id.unique = true;
+    f_id.primary_key = true;
+    rel.fields.push_back(f_id);
+    rel.fields.push_back(Field("name", Type::create_CHAR(20)));
+    rel.fields.push_back(Field("contact", Type::create_CHAR(20)));
+    rel.update();
+
+    {
+        auto sc_disk = rm.select_record(rel, nullptr);
+        vector<unique_ptr<Expression>> fields;
+        auto fe = new FieldExpression("name");
+        fe->resolve(rel);
+        fields.push_back(unique_ptr<Expression>(fe));
+        auto sc_proj = unique_ptr<ProjectScanner>(new ProjectScanner(move(sc_disk), move(fields)));
+
+        int count = 0;
+        while (sc_proj->next()) {
+            if (count == 0)  assert(sc_proj->current().values[0].CHAR == "Zhang San", "row 0");
+            if (count == 1)  assert(sc_proj->current().values[0].CHAR == "Li Si", "row 1");
+            count++;
+        }
+        assert(count == 2, "count");
+    }
 }

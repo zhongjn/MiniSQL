@@ -1,6 +1,5 @@
-#include <iostream>
-#include <string>
-#include "case.h"
+#include "test.h"
+vector<pair<string, void(*)()>> test_cases;
 
 using namespace std;
 

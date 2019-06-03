@@ -32,5 +32,6 @@ int main()
     auto& tt = typeid(int);
     auto& tt2 = typeid(*test);
     auto n = tt2.name();
+
     return 0;
 }

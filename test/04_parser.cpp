@@ -1,4 +1,4 @@
-#include "case.h"
+#include "test.h"
 #include "../query_parser.h"
 
 TEST_CASE(parser_select_simple) {
@@ -9,7 +9,7 @@ TEST_CASE(parser_select_simple) {
     auto ss = static_cast<SelectStatement*>(stmt.release());
 
     assert(ss->select.size() == 1, "field count");
-    assert(ss->select[0].alias.null(), "alias");
+    assert(ss->select[0].expr->name == "a", "expr name");
 
     auto expr = ss->select[0].expr.get();
     assert(typeid(*expr) == typeid(FieldExpression), "expr type");
@@ -29,12 +29,14 @@ TEST_CASE(parser_select_expr) {
     rel.fields.push_back(Field("b", Type::create_CHAR(10)));
     rel.fields.push_back(Field("a", Type::create_INT()));
 
-    auto tokens = QueryLexer().tokenize("select 2+a*3 from test");
+    auto tokens = QueryLexer().tokenize("select 2+a*3 as C from test");
     auto stmt = QueryParser().parse(move(tokens));
     assert(typeid(*stmt) == typeid(SelectStatement), "stmt type");
 
     auto ss = static_cast<SelectStatement*>(stmt.release());
     auto expr = ss->select[0].expr.get();
+
+    assert(expr->name == "C", "expr name");
 
     expr->resolve(rel);
 

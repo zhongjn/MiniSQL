@@ -1,4 +1,4 @@
-#include "case.h"
+#include "test.h"
 #include "../record_manager.h"
 
 TEST_CASE(record) {

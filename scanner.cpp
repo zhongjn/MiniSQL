@@ -41,6 +41,7 @@ bool DiskScanner::next() {
 
 FilterScanner::FilterScanner(unique_ptr<Scanner> from, unique_ptr<Expression> pred) : _from(move(from)), _pred(move(pred)) {
     if (_pred == nullptr) throw logic_error("Expression cannot be null.");
+    _pred->resolve(_from->rel_out());
     if (_pred->type().tag != Type::Tag::INT) {
         throw logic_error("This expression cannot be a predicate.");
     }
@@ -57,9 +58,11 @@ bool FilterScanner::next() {
 }
 
 
-ProjectScanner::ProjectScanner(vector<unique_ptr<Expression>> fields) : _fields(move(fields)) {
-    for (auto& f : _fields) {
-        _rel_out.fields.push_back(Field(f->name(), f->type()));
+ProjectScanner::ProjectScanner(unique_ptr<Scanner> from, vector<unique_ptr<Expression>> fields) : _from(move(from)), _fields(move(fields)) {
+    resolve(_from->rel_out());
+    for (int i = 0; i < _fields.size(); i++) {
+        auto& f = _fields[i];
+        _rel_out.fields.push_back(Field(f->name, f->type()));
     }
     _rel_out.update();
 }
