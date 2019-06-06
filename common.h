@@ -175,10 +175,6 @@ struct Record {
     }
 };
 
-class IndexIterator : public iterator<forward_iterator_tag, RecordPosition> {
-
-};
-
 template<typename To, typename From>
 unique_ptr<To> static_cast_unique_ptr(unique_ptr<From>&& old) {
     return unique_ptr<To>{static_cast<To*>(old.release())};

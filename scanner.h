@@ -1,8 +1,9 @@
 #pragma once
+#include <memory>
 #include "common.h"
 #include "nullable.h"
-#include <memory>
 #include "expression.h"
+#include "index_manager.h"
 
 class Scanner {
 public:
@@ -39,9 +40,10 @@ class DiskScanner : public Scanner {
     BlockGuard bg_rel;
     int record_length;
 
-    RecordPosition cur_pos;
+    RecordPosition linear_pos;
     Record cur_record;
     unique_ptr<IndexIterator> index_it;
+    void parse_cur_record(RecordEntryData* rec_entry);
 
 public:
     DiskScanner(BlockManager* block_mgr, Relation rel, unique_ptr<IndexIterator> index_it);
