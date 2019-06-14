@@ -19,6 +19,7 @@ FieldData Field::to_file() const {
     f.primary_key = primary_key;
     f.type = type;
     f.unique = unique;
+    f.has_index = has_index;
     return f;
 }
 
@@ -27,13 +28,20 @@ void Field::from_file(const FieldData & f) {
     primary_key = f.primary_key;
     type = f.type;
     unique = f.unique;
+    has_index = f.has_index;
 }
 
 void Relation::update() {
     int len = 0;
+    indexes.clear();
+    int i = 0;
     for (auto& f : fields) {
         f.offset = len;
         len += f.type.length();
+        if (f.has_index) {
+            indexes.push_back(i);
+        }
+        i++;
     }
 }
 
@@ -60,14 +68,12 @@ RelationData Relation::to_file() const {
 
 void Relation::from_file(const RelationData& f) {
     fields.clear();
-    int pos = 0;
     for (int i = 0; i < f.field_count; i++) {
         Field fld;
         fld.from_file(f.fields[i]);
-        fld.offset = pos;
         fields.push_back(fld);
-        pos += fld.type.length();
     }
+    update();
 }
 
 
@@ -129,4 +135,22 @@ void Value::parse(void* addr, Type type){
         }
         default: break;
     }
+}
+
+string string_format(const string fmt_str, ...) {
+    int final_n, n = ((int)fmt_str.size()) * 2; /* Reserve two times as much as the length of the fmt_str */
+    unique_ptr<char[]> formatted;
+    va_list ap;
+    while (1) {
+        formatted.reset(new char[n]); /* Wrap the plain char array into the unique_ptr */
+        strcpy(&formatted[0], fmt_str.c_str());
+        va_start(ap, fmt_str);
+        final_n = vsnprintf(&formatted[0], n, fmt_str.c_str(), ap);
+        va_end(ap);
+        if (final_n < 0 || final_n >= n)
+            n += abs(final_n - n + 1);
+        else
+            break;
+    }
+    return string(formatted.get());
 }

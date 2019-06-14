@@ -69,6 +69,8 @@ public:
     // 在文件末尾追加一个块，其内容为全0
     int file_append_block(const string& file_path);
 
+    void file_delete(const string& file_path);
+
     // 获取一个块的访问权，返回块内存地址，大小为BLOCK_SIZE
     void* use_block(const BlockEntry& entry);
 

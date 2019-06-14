@@ -13,6 +13,7 @@ set(project_headers
 	"common.h"
 	"expression.h"
 	"files.h"
+	"index.h"
 	"index_manager.h"
 	"lru.h"
 	"nullable.h"
@@ -21,6 +22,7 @@ set(project_headers
 	"query_parser.h"
 	"record_manager.h"
 	"scanner.h"
+	"storage_engine.h"
 )
 
 set(project_sources 
@@ -28,12 +30,14 @@ set(project_sources
 	"catalog_manager.cpp"
 	"common.cpp"
 	"expression.cpp"
+	"index.cpp"
 	"index_manager.cpp"
 	"query_executor.cpp"
 	"query_lexer.cpp"
 	"query_parser.cpp"
 	"record_manager.cpp"
 	"scanner.cpp"
+	"storage_engine.cpp"
 )
 
 set(tests

@@ -16,5 +16,6 @@ public:
     void add_relation(const Relation& relation);
     void remove_relation(const string& name);
     Nullable<Relation> get_relation(const string& name);
-    // vector<Relation> list_relation();
+    void add_index(const Relation& rel, int field_index);
+    void remove_index(const Relation& rel, int field_index);
 };

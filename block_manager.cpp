@@ -68,6 +68,7 @@ FILE* BlockManager::use_file(const string& path) {
 
 void BlockManager::block_writeback(const BlockEntry& entry, void* data) {
     FILE* fp = use_file(entry.file_path.c_str());
+    if (entry.block_index >= file_blocks(entry.file_path)) throw logic_error("Unexpected writeback error. The file may be deleted.");
     fseek(fp, entry.block_index * BLOCK_SIZE, SEEK_SET);
     fwrite(data, BLOCK_SIZE, 1, fp);
 }
@@ -117,6 +118,15 @@ int BlockManager::file_append_block(const string& file_path) {
     static uint8_t data[BLOCK_SIZE] = { 0 };
     fwrite(&data, sizeof(data), 1, fp);
     return index;
+}
+
+void BlockManager::file_delete(const string& file_path) {
+    auto& active = active_files.find(file_path);
+    if (active != active_files.end()) {
+        fclose(active->second);
+        remove(file_path.c_str());
+        active_files.erase(file_path);
+    }
 }
 
 void* BlockManager::use_block(const BlockEntry& entry)

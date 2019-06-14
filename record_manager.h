@@ -18,13 +18,8 @@ public:
     RecordManager(BlockManager* block_mgr);
     void add_relation(const Relation& rel);
     void remove_relation(const string& name);
-    RecordPosition insert_record(const Relation& rel, const vector<Value>& values);
-    //void delete_record(const Relation& rel, Nullable<Condition> cond = Null());
-    //void delete_record(const Relation& rel, RecordPosition pos_hint);
-    // list<Record> select_record(const Relation& rel, Nullable<Condition> cond = Null());
-    // Record select_record(const Relation& rel, RecordPosition pos_hint);
-
-    void delete_record(const Relation& rel, unique_ptr<IndexIterator>, unique_ptr<Expression> pred);
-
+    RecordPosition insert_record(const Relation& rel, const Record& record);
     unique_ptr<Scanner> select_record(const Relation& rel, unique_ptr<IndexIterator> index_it);
+    void delete_record(const Relation& rel, RecordPosition pos);
+    void update_record(const Relation& rel, RecordPosition pos, const Record& record);
 };

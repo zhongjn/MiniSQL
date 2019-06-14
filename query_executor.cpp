@@ -11,9 +11,9 @@ unique_ptr<Scanner> QueryExecutor::select_scanner(SelectStatement* stmt) {
     else {
         if (stmt->from->type == SelectSource::Type::physical) {
             // TODO: index
-            auto ph_rel = _cm->get_relation(stmt->from->physical);
+            auto ph_rel = _storage_eng->get_relation(stmt->from->physical);
             if (!ph_rel) throw logic_error("relation not found");
-            sc = _rm->select_record(ph_rel.value(), nullptr);
+            sc = _storage_eng->select_record(ph_rel.value(), Null());
         }
         else {
             sc = select_scanner(stmt->from->subquery.get());
@@ -32,19 +32,42 @@ unique_ptr<Scanner> QueryExecutor::select_scanner(SelectStatement* stmt) {
     return unique_ptr<Scanner>(new ProjectScanner(move(sc), move(fields)));
 }
 
-Table QueryExecutor::select_exe(SelectStatement* stmt) {
-    Table t;
+QueryResult QueryExecutor::select_exe(SelectStatement* stmt) {
+    QueryResult t;
     auto sc = select_scanner(stmt);
     t.relation = sc->rel_out();
     while (sc->next()) {
         t.records.push_back(move(sc->current()));
     }
+    t.prompt = string_format("Query OK. %d row(s) in set.", t.records.size());
     return t;
 }
 
-Table QueryExecutor::execute(unique_ptr<Statement> stmt) {
+QueryResult QueryExecutor::update_exe(UpdateStatement* stmt){
+    return QueryResult();
+}
+
+QueryResult QueryExecutor::insert_exe(InsertStatement* stmt){
+    return QueryResult();
+}
+
+QueryResult QueryExecutor::delete_exe(DeleteStatement* stmt){
+    return QueryResult();
+}
+
+
+QueryResult QueryExecutor::execute(unique_ptr<Statement> stmt) {
     auto& tt = typeid(*stmt);
     if (tt == typeid(SelectStatement)) {
         return select_exe((SelectStatement*)stmt.get());
+    }
+    if (tt == typeid(UpdateStatement)) {
+        return update_exe((UpdateStatement*)stmt.get());
+    }
+    if (tt == typeid(InsertStatement)) {
+        return insert_exe((InsertStatement*)stmt.get());
+    }
+    if (tt == typeid(DeleteStatement)) {
+        return delete_exe((DeleteStatement*)stmt.get());
     }
 }

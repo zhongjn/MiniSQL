@@ -19,29 +19,29 @@ TEST_CASE(record) {
     Value v;
 
     {
-        vector<Value> values;
+        Record r;
 
         v.INT = 1;
-        values.push_back(v);
+        r.values.push_back(v);
         v.CHAR = "Zhang San";
-        values.push_back(v);
+        r.values.push_back(v);
         v.CHAR = "z3@example.com";
-        values.push_back(v);
+        r.values.push_back(v);
 
-        rm.insert_record(rel, values);
+        rm.insert_record(rel, r);
     }
 
     {
-        vector<Value> values;
+        Record r;
 
         v.INT = 2;
-        values.push_back(v);
+        r.values.push_back(v);
         v.CHAR = "Li Si";
-        values.push_back(v);
+        r.values.push_back(v);
         v.CHAR = "l4@example.com";
-        values.push_back(v);
+        r.values.push_back(v);
 
-        rm.insert_record(rel, values);
+        rm.insert_record(rel, r);
     }
 
     auto scanner = rm.select_record(rel, nullptr);

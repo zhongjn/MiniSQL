@@ -3,7 +3,7 @@
 #include "common.h"
 #include "nullable.h"
 #include "expression.h"
-#include "index_manager.h"
+#include "index.h"
 
 class Scanner {
 public:
@@ -34,16 +34,17 @@ public:
     }
 };
 
+
 class DiskScanner : public Scanner {
     BlockManager* block_mgr;
     Relation rel;
     BlockGuard bg_rel;
     int record_length;
 
-    RecordPosition linear_pos;
+    RecordPosition cur_pos;
     Record cur_record;
     unique_ptr<IndexIterator> index_it;
-    void parse_cur_record(RecordEntryData* rec_entry);
+    void parse_cur_record(RecordEntryData* rec_entry, RecordPosition rp);
 
 public:
     DiskScanner(BlockManager* block_mgr, Relation rel, unique_ptr<IndexIterator> index_it);

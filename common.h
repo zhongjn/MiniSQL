@@ -4,6 +4,7 @@
 #include <string>
 #include <sstream>
 #include <vector>
+#include <stdarg.h>
 #include "files.h"
 #include "block_manager.h"
 
@@ -38,6 +39,7 @@ struct FieldData {
     char name[NAME_LENGTH] = { 0 }; // Ãû×Ö
     bool unique;
     bool primary_key;
+    bool has_index;
     Type type;
 };
 
@@ -46,6 +48,7 @@ struct Field {
     int offset;
     bool unique = false;
     bool primary_key = false;
+    bool has_index = false;
     Type type;
 
     FieldData to_file() const;
@@ -64,6 +67,7 @@ static_assert(sizeof(RelationData) <= BLOCK_SIZE, "RelationData cannot be contai
 struct Relation {
     string name;
     vector<Field> fields;
+    vector<int> indexes;
     void update();
     int record_length() const;
     RelationData to_file() const;
@@ -88,7 +92,7 @@ struct RecordPosition {
     int pos = -1;
     RecordPosition() = default;
     RecordPosition(int block_index, int pos) : block_index(block_index), pos(pos) {};
-    bool nil() { return block_index < 0 || pos < 0; }
+    bool nil() const { return block_index < 0 || pos < 0; }
 
     static int cmp(RecordPosition p1, RecordPosition p2) {
         if (p1.nil() || p2.nil()) throw logic_error("Cannot compare nil value.");
@@ -163,6 +167,7 @@ struct Value {
 
 struct Record {
     vector<Value> values;
+    RecordPosition physical_position;
     Record() = default;
     Record(Record&& rec) noexcept {
         *this = move(rec);
@@ -176,12 +181,8 @@ struct Record {
 };
 
 template<typename To, typename From>
-unique_ptr<To> static_cast_unique_ptr(unique_ptr<From>&& old) {
+inline unique_ptr<To> static_cast_unique_ptr(unique_ptr<From>&& old) {
     return unique_ptr<To>{static_cast<To*>(old.release())};
-    //conversion: unique_ptr<FROM>->FROM*->TO*->unique_ptr<TO>
 }
 
-struct Table {
-    Relation relation;
-    vector<Record> records;
-};
+string string_format(const string fmt_str, ...);

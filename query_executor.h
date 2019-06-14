@@ -1,19 +1,27 @@
 #pragma once
 #include <typeinfo>
 #include "query_parser.h"
-#include "scanner.h"
-#include "record_manager.h"
-#include "catalog_manager.h"
+#include "storage_engine.h"
 #include <unordered_map>
 
+struct QueryResult {
+    Relation relation;
+    vector<Record> records;
+    string prompt;
+};
+
 class QueryExecutor {
-    CatalogManager* _cm;
-    RecordManager* _rm;
+    //CatalogManager* _cm;
+    //RecordManager* _rm;
+    StorageEngine* _storage_eng;
 
     unique_ptr<Scanner> select_scanner(SelectStatement* stmt);
-    Table select_exe(SelectStatement* stmt);
+    QueryResult select_exe(SelectStatement* stmt);
+    QueryResult update_exe(UpdateStatement* stmt);
+    QueryResult insert_exe(InsertStatement* stmt);
+    QueryResult delete_exe(DeleteStatement* stmt);
 
 public:
-    QueryExecutor(CatalogManager* cm, RecordManager* rm) : _cm(cm), _rm(rm) {};
-    Table execute(unique_ptr<Statement> stmt);
+    QueryExecutor(StorageEngine* storage_eng) : _storage_eng(storage_eng) {};
+    QueryResult execute(unique_ptr<Statement> stmt);
 };

@@ -19,10 +19,12 @@ void RecordManager::add_relation(const Relation& rel) {
 }
 
 void RecordManager::remove_relation(const string& name) {
-
+    block_mgr->file_delete(Files::relation(name));
 }
 
-RecordPosition RecordManager::insert_record(const Relation& rel, const vector<Value>& values) {
+RecordPosition RecordManager::insert_record(const Relation& rel, const Record& record) {
+    auto& values = record.values;
+
     if (rel.fields.size() != values.size()) {
         throw logic_error("Fields count mismatch.");
     }

@@ -7,38 +7,39 @@ DiskScanner::DiskScanner(BlockManager* block_mgr, Relation _rel, unique_ptr<Inde
     record_length = rel.record_length();
 }
 
-void DiskScanner::parse_cur_record(RecordEntryData* rec_entry) {
+void DiskScanner::parse_cur_record(RecordEntryData* rec_entry, RecordPosition rp) {
     cur_record.values.clear();
     for (auto& field : rel.fields) {
         Value value;
         value.parse(rec_entry->values + field.offset, field.type);
         cur_record.values.push_back(move(value));
     }
+    cur_record.physical_position = rp;
 }
 
 bool DiskScanner::next() {
     if (index_it) {
         if (index_it->next()) {
-            RecordPosition rp = index_it->current();
-            BlockGuard bg_rec(block_mgr, Files::relation(rel.name), rp.block_index);
-            auto rec_entry = bg_rec.addr<RecordEntryData>(rp.pos);
+            cur_pos = index_it->current();
+            BlockGuard bg_rec(block_mgr, Files::relation(rel.name), cur_pos.block_index);
+            auto rec_entry = bg_rec.addr<RecordEntryData>(cur_pos.pos);
             if (!rec_entry->use) throw logic_error("Unexpected unused record.");
-            parse_cur_record(rec_entry);
+            parse_cur_record(rec_entry, cur_pos);
             return true;
         }
         return false;
     }
     else {
         while (1) {
-            linear_pos = linear_pos.nil() ? RECORD_START : linear_pos.next(record_length);
+            cur_pos = cur_pos.nil() ? RECORD_START : cur_pos.next(record_length);
             auto rel_entry = bg_rel.addr<RelationEntryData>();
             // 如果尚未到达所有记录尾部
-            if (RecordPosition::cmp(linear_pos, rel_entry->empty) < 0) {
-                BlockGuard bg_rec(block_mgr, Files::relation(rel.name), linear_pos.block_index);
-                auto rec_entry = bg_rec.addr<RecordEntryData>(linear_pos.pos);
+            if (RecordPosition::cmp(cur_pos, rel_entry->empty) < 0) {
+                BlockGuard bg_rec(block_mgr, Files::relation(rel.name), cur_pos.block_index);
+                auto rec_entry = bg_rec.addr<RecordEntryData>(cur_pos.pos);
                 // 如果当前条有效，那么找到了
                 if (rec_entry->use) {
-                    parse_cur_record(rec_entry);
+                    parse_cur_record(rec_entry, cur_pos);
                     return true;
                 }
             }
