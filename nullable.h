@@ -15,6 +15,11 @@ public:
 
     Nullable(Null n) {}
 
+    Nullable(const T& t) : has_v(true), v(t) {}
+
+    Nullable(T&& t) : has_v(true), v(move(t)) {}
+
+
     Nullable& operator=(Nullable&& n) noexcept {
         if (&n != this) {
             if (has_v) {
@@ -50,11 +55,11 @@ public:
         *this = n;
     }
 
-    template<typename ...Args>
-    Nullable(Args&& ... args) :
-        v(forward<Args>(args)...), has_v(true)
-    {
-    }
+    //template<typename ...Args>
+    //Nullable(Args&& ... args) :
+    //    v(forward<Args>(args)...), has_v(true)
+    //{
+    //}
 
     bool null() const { return !has_v; }
 

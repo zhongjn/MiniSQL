@@ -18,12 +18,12 @@ private:
             return unique_ptr<IndexIterator>(new IndexIterator(im.get_index(rel, index_usage.value())));
         }
         else {
-            return  nullptr;
+            return nullptr;
         }
     }
 
 public:
-    StorageEngine(int max_blocks) : bm(max_blocks), cm(&bm), rm(&bm), im(&bm) {
+    StorageEngine(int max_blocks = 1024) : bm(max_blocks), cm(&bm), rm(&bm), im(&bm) {
 
     }
 

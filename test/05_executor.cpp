@@ -4,13 +4,11 @@
 #include "../query_executor.h"
 
 TEST_CASE(executor_direct) {
-    BlockManager bm;
-    RecordManager rm(&bm);
-    CatalogManager cm(&bm);
+    StorageEngine eng;
 
     auto tokens = QueryLexer().tokenize("select id,name,contact from test_table");
     auto stmt = QueryParser().parse(move(tokens));
-    auto table = QueryExecutor(&cm, &rm).execute(move(stmt));
+    auto table = QueryExecutor(&eng).execute(move(stmt));
 
     assert(table.records.size() == 2, "record count");
 
@@ -32,13 +30,11 @@ TEST_CASE(executor_direct) {
 }
 
 TEST_CASE(executor_expr_where) {
-    BlockManager bm;
-    RecordManager rm(&bm);
-    CatalogManager cm(&bm);
+    StorageEngine eng;
 
     auto tokens = QueryLexer().tokenize("select 2+4*-id from test_table where id=2");
     auto stmt = QueryParser().parse(move(tokens));
-    auto table = QueryExecutor(&cm, &rm).execute(move(stmt));
+    auto table = QueryExecutor(&eng).execute(move(stmt));
 
     assert(table.records.size() == 1, "record count");
 
@@ -50,13 +46,11 @@ TEST_CASE(executor_expr_where) {
 }
 
 TEST_CASE(executor_nested) {
-    BlockManager bm;
-    RecordManager rm(&bm);
-    CatalogManager cm(&bm);
+    StorageEngine eng;
 
     auto tokens = QueryLexer().tokenize("select N from (select id I, name N from test_table) where I=1");
     auto stmt = QueryParser().parse(move(tokens));
-    auto table = QueryExecutor(&cm, &rm).execute(move(stmt));
+    auto table = QueryExecutor(&eng).execute(move(stmt));
 
     assert(table.records.size() == 1, "record count");
 
