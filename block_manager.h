@@ -21,22 +21,24 @@ struct BlockEntry {
     BlockEntry(string file_path, int block_index);
 };
 
-template<>
-struct hash<BlockEntry> {
-    size_t operator()(const BlockEntry& entry) const {
-        size_t h1 = hash<string>()(entry.file_path);
-        size_t h2 = hash<int>()(entry.block_index);
-        return  h1 ^ (h2 << 1);
-    }
-};
+namespace std {
+    template<>
+    struct hash<BlockEntry> {
+        size_t operator()(const BlockEntry& entry) const {
+            size_t h1 = hash<string>()(entry.file_path);
+            size_t h2 = hash<int>()(entry.block_index);
+            return  h1 ^ (h2 << 1);
+        }
+    };
 
-template<>
-struct equal_to<BlockEntry> {
-    bool operator()(const BlockEntry& lhs, const BlockEntry& rhs) const
-    {
-        return lhs.block_index == rhs.block_index && lhs.file_path == rhs.file_path;
-    }
-};
+    template<>
+    struct equal_to<BlockEntry> {
+        bool operator()(const BlockEntry& lhs, const BlockEntry& rhs) const
+        {
+            return lhs.block_index == rhs.block_index && lhs.file_path == rhs.file_path;
+        }
+    };
+}
 
 struct ActiveBlockInfo {
     int use_count;

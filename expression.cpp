@@ -105,7 +105,7 @@ Type deduce_type(Op2 op, Type t1, Type t2) {
     return t;
 }
 
-#define OP_CASE(case_op, fn) case BinaryExpression::Operator::##case_op: return v1##fn##v2;
+#define OP_CASE(case_op, fn) case BinaryExpression::Operator::case_op: return v1 fn v2;
 
 template<typename V1, typename V2>
 int do_rel_op(Op2 op, V1 v1, V2 v2) {
