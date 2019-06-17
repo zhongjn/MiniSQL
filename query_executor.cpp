@@ -194,7 +194,6 @@ Nullable<IndexUsage> QueryExecutor::search_index(BinaryExpression* exp, Relation
 
 unique_ptr<Scanner> QueryExecutor::select_scanner(SelectStatement* stmt) {
     unique_ptr<Scanner> sc;
-    Relation rel_from;
     if (!stmt->from) {
         vector<Record> v;
         v.push_back(Record());
@@ -293,7 +292,7 @@ QueryResult QueryExecutor::delete_exe(DeleteStatement* stmt){
 	vector<Record> records;
 	while (sc->next())
 	{
-		records.push_back(sc->current());
+		records.push_back(move(sc->current()));
 		++count;
 	}
 	for (int i = 0; i < records.size(); ++i)
