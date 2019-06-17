@@ -1,7 +1,16 @@
 #include "test.h"
+#include "../catalog_manager.h"
 #include "../record_manager.h"
 
-TEST_CASE(record) {
+static int count(const unique_ptr<Scanner>& sc) {
+    int count = 0;
+    while (sc->next()) {
+        count++;
+    }
+    return count;
+}
+
+TEST_CASE(record_insert) {
     BlockManager bm;
     RecordManager rm(&bm);
 
@@ -15,7 +24,7 @@ TEST_CASE(record) {
     rel.update();
 
     rm.add_relation(rel);
-    
+
     Value v;
 
     {
@@ -64,4 +73,28 @@ TEST_CASE(record) {
     }
 
     assert(i == 2, "record count");
+}
+
+TEST_CASE(record_delete) {
+    BlockManager bm;
+    RecordManager rm(&bm);
+    CatalogManager cm(&bm);
+
+    Relation rel = cm.get_relation("test_table").value();
+
+    Value v;
+    Record r;
+
+    v.INT = 6;
+    r.values.push_back(v);
+    v.CHAR = "Wang Wu";
+    r.values.push_back(v);
+    v.CHAR = "w5@example.com";
+    r.values.push_back(v);
+
+    assert(count(rm.select_record(rel, nullptr)) == 2, "count");
+    auto rp = rm.insert_record(rel, r);
+    assert(count(rm.select_record(rel, nullptr)) == 3, "count");
+    rm.delete_record(rel, rp);
+    assert(count(rm.select_record(rel, nullptr)) == 2, "count");
 }
