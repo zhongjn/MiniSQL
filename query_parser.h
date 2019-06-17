@@ -44,7 +44,7 @@ struct UpdateField {
 };
 
 struct UpdateStatement : public Statement {
-	string relation;
+	string table;
 	vector<UpdateField> set;
 	unique_ptr<Expression> where;
 };
@@ -53,6 +53,32 @@ struct DeleteStatement : public Statement {
 	string relation;
 	unique_ptr<Expression> where;
 
+};
+
+struct CreateTableField {
+	string name;
+	Type type;
+	Nullable<string> limit;
+};
+
+struct CreateTableStatement : public Statement {
+	string table;
+	vector<CreateTableField> fields;
+	string key;
+};
+
+struct DropTableStatement : public Statement {
+	string table;
+};
+
+struct CreateIndexStatement : public Statement {
+	string indexname;
+	string table;
+	string attribution;
+};
+
+struct DropIndexStatement : public Statement {
+	string indexname;
 };
 
 class QueryParser {
@@ -98,8 +124,8 @@ private:
         return expression(expr, a, b);
     }
 
-	bool insert_source(string& source);
-	bool insert_field(string& field);
+	bool string_identifier(string& string);
+
 	bool insert_value(pair<Type, Value>& value);
 	bool insert_list(vector<string>& fields);
 	bool insert_list(vector<pair<Type, Value>>& values);
@@ -112,18 +138,27 @@ private:
     bool select_stmt_inner(unique_ptr<SelectStatement>& stmt);
     bool select_stmt(unique_ptr<Statement>& stmt);
 
-	bool update_source(string& source);
 	bool update_field(UpdateField& f);
 	bool update_list(vector<UpdateField> & fields);
 	bool update_stmt_inner(unique_ptr<UpdateStatement> & stmt);
 	bool update_stmt(unique_ptr<Statement>& stmt);
 
-	bool delete_source(string& source);
 	bool delete_stmt_inner(unique_ptr<DeleteStatement>& stmt);
 	bool delete_stmt(unique_ptr<Statement>& stmt);
 
-	bool table_stmt(unique_ptr<Statement>& stmt);
-	bool index_stmt(unique_ptr<Statement>& stmt);
+	bool create_table_field(CreateTableField& field);
+	bool create_table_list(vector<CreateTableField>& fields);
+	bool create_table_stmt_inner(unique_ptr<CreateTableStatement>& stmt);
+	bool create_table_stmt(unique_ptr<Statement>& stmt);
+
+	bool drop_table_stmt_inner(unique_ptr<DropTableStatement>& stmt);
+	bool drop_table_stmt(unique_ptr<Statement>& stmt);
+
+	bool create_index_stmt_inner(unique_ptr<CreateIndexStatement>& stmt);
+	bool create_index_stmt(unique_ptr<Statement>& stmt);
+
+	bool drop_index_stmt_inner(unique_ptr<DropIndexStatement>& stmt);
+	bool drop_index_stmt(unique_ptr<Statement>& stmt);
 
     bool stmt(unique_ptr<Statement>& s);
 
