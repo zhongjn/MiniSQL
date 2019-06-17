@@ -22,5 +22,7 @@ int main() {
         }
         cur++;
     }
-    return 0;
+	system("pause");
+	return 0;
+
 }

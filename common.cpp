@@ -95,7 +95,32 @@ int DatabaseData::get_free_block_index() const {
     }
     return -1;
 }
-
+bool Value::greater_than(const struct Value& x, Type type)
+{
+	using Tag = Type::Tag;
+	switch (type.tag)
+	{
+	case Tag::INT:
+	{
+		if (this->INT > x.INT)
+			return true;
+		else return false;
+	}
+	case Tag::CHAR:
+	{
+		if (this->CHAR > x.CHAR)
+			return true;
+		return false;
+	}
+	default:
+	{
+		if (this->FLOAT > x.FLOAT)
+			return true;
+		return false;
+	}
+	}
+	return true;
+}
 void Value::write(void* addr, Type type) const {
     using Tag = Type::Tag;
     switch (type.tag) {

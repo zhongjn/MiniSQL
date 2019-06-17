@@ -126,11 +126,30 @@ struct RecordEntryData {
 };
 
 struct Value {
+private:
+	template<typename T>
+	static int cmp(T t1, T t2) {
+		if (t1 < t2) return -1;
+		if (t1 > t2) return 1;
+		return 0;
+	}
+public:
     union {
         int INT = 0;
         float FLOAT;
     };
     string CHAR;
+	bool greater_than(const Value& x, Type type);
+	static int cmp(Type type, const Value& v1, const Value& v2)
+	{
+		switch (type.tag)
+		{
+		case Type::Tag::INT: return cmp(v1.INT, v2.INT);
+		case Type::Tag::FLOAT: return cmp(v1.FLOAT, v2.FLOAT);
+		case Type::Tag::CHAR: return cmp(v1.CHAR, v2.CHAR);
+		default: throw logic_error("Unexpected type.");
+		}
+	}
     void write(void* addr, Type type) const;
     void parse(void* addr, Type type);
     Value& operator=(Value&& v) noexcept {

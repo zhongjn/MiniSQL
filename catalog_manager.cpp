@@ -17,7 +17,8 @@ CatalogManager::CatalogManager(BlockManager* block_mgr) : block_mgr(block_mgr) {
     //    if (name[0] != 0) {
     //        relation_lookup.insert(pair<string, int>(name, i));
     //    }
-    //}
+    //}'
+
 }
 
 static void check_name(const string& name) {
