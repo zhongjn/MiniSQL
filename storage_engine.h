@@ -57,14 +57,15 @@ public:
         }
     }
 
-    void update_record(const Relation& rel, Record&& record, function<bool(int index, Value& value)> modifier) {
+    void update_record(const Relation& rel, Record&& record, function<Nullable<Value>(const Record& record, int field_index)> new_value) {
         if (record.physical_position.nil()) throw logic_error("Unexpected error. This record does not has a physical position."); 
+        Record record_origin = record;
         for (int field_index : rel.indexes) {
-            Value& value = record.values[field_index];
-            Value value_origin = value;
-            if (modifier(field_index, value)) {
-                im.remove_item(rel, field_index, value_origin);
-                im.add_item(rel, field_index, value, record.physical_position);
+            Nullable<Value> new_v = new_value(record_origin, field_index);
+            if (new_v) {
+                record.values[field_index] = new_v.value();
+                im.remove_item(rel, field_index, record_origin.values[field_index]);
+                im.add_item(rel, field_index, new_v.value(), record.physical_position);
             }
         }
         rm.update_record(rel, record.physical_position, record);

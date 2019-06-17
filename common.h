@@ -172,16 +172,16 @@ struct Value {
 struct Record {
     vector<Value> values;
     RecordPosition physical_position;
-    Record() = default;
-    Record(Record&& rec) noexcept {
-        *this = move(rec);
-    }
-    Record& operator=(Record&& rec) noexcept {
-        if (&rec != this) {
-            values = move(rec.values);
-        }
-        return *this;
-    }
+    //Record() = default;
+    //Record(Record&& rec) noexcept {
+    //    *this = move(rec);
+    //}
+    //Record& operator=(Record&& rec) noexcept {
+    //    if (&rec != this) {
+    //        values = move(rec.values);
+    //    }
+    //    return *this;
+    //}
 };
 
 template<typename To, typename From>
