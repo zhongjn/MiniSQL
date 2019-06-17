@@ -23,7 +23,7 @@ struct SelectSource {
 
 struct InsertStatement : public Statement {
     string into;
-    vector<string> fields;
+    Nullable<vector<string>> fields;
     vector<pair<Type, Value>> values;
 };
 
@@ -39,9 +39,8 @@ struct SelectStatement : public Statement {
 };
 
 struct UpdateField {
+	string item;
 	unique_ptr<Expression> expr;
-	int field_index;
-	// Nullable<string> alias;
 };
 
 struct UpdateStatement : public Statement {
@@ -53,6 +52,7 @@ struct UpdateStatement : public Statement {
 struct DeleteStatement : public Statement {
 	string relation;
 	unique_ptr<Expression> where;
+
 };
 
 class QueryParser {
@@ -98,11 +98,32 @@ private:
         return expression(expr, a, b);
     }
 
+	bool insert_source(string& source);
+	bool insert_field(string& field);
+	bool insert_value(pair<Type, Value>& value);
+	bool insert_list(vector<string>& fields);
+	bool insert_list(vector<pair<Type, Value>>& values);
+	bool insert_stmt_inner(unique_ptr<InsertStatement>& stmt);
+	bool insert_stmt(unique_ptr<Statement>& stmt);
+
     bool select_field(SelectField& f);
     bool select_list(vector<SelectField>& fields);
     bool select_source(SelectSource& source);
     bool select_stmt_inner(unique_ptr<SelectStatement>& stmt);
     bool select_stmt(unique_ptr<Statement>& stmt);
+
+	bool update_source(string& source);
+	bool update_field(UpdateField& f);
+	bool update_list(vector<UpdateField> & fields);
+	bool update_stmt_inner(unique_ptr<UpdateStatement> & stmt);
+	bool update_stmt(unique_ptr<Statement>& stmt);
+
+	bool delete_source(string& source);
+	bool delete_stmt_inner(unique_ptr<DeleteStatement>& stmt);
+	bool delete_stmt(unique_ptr<Statement>& stmt);
+
+	bool table_stmt(unique_ptr<Statement>& stmt);
+	bool index_stmt(unique_ptr<Statement>& stmt);
 
     bool stmt(unique_ptr<Statement>& s);
 

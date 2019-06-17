@@ -4,8 +4,7 @@
 #include "catalog_manager.h"
 #include "record_manager.h"
 #include "index_manager.h"
-
-
+#include "functional"
 
 class StorageEngine {
     BlockManager bm;
@@ -51,14 +50,27 @@ public:
         im.remove_index(rel, field_index);
     }
 
-    void insert_record(const Relation& rel, const Record& record) {
+    void insert_record(const Relation& rel, Record&& record) {
         RecordPosition pos = rm.insert_record(rel, record);
         for (int field_index : rel.indexes) {
             im.add_item(rel, field_index, record.values[field_index], pos);
         }
     }
 
-    void delete_record(const Relation& rel, const Record& record) {
+    void update_record(const Relation& rel, Record&& record, function<bool(int index, Value& value)> modifier) {
+        if (record.physical_position.nil()) throw logic_error("Unexpected error. This record does not has a physical position."); 
+        for (int field_index : rel.indexes) {
+            Value& value = record.values[field_index];
+            Value value_origin = value;
+            if (modifier(field_index, value)) {
+                im.remove_item(rel, field_index, value_origin);
+                im.add_item(rel, field_index, value, record.physical_position);
+            }
+        }
+        rm.update_record(rel, record.physical_position, record);
+    }
+
+    void delete_record(const Relation& rel, Record&& record) {
         if (record.physical_position.nil()) throw logic_error("Unexpected error. This record does not has a physical position.");
         rm.delete_record(rel, record.physical_position);
         for (int field_index : rel.indexes) {
