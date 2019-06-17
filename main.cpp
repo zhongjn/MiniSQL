@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <iostream>
+#include <iomanip>
 #include <fstream>
 #include <regex>
 #include <typeinfo>
@@ -20,6 +21,7 @@ void match(const regex& r, const char* str) {
 
 QueryResult execute_expr(QueryExecutor& executor, string expr);
 void disp_records(QueryResult& result);
+void draw_line(int* max, int size);
 
 int main(void)
 {
@@ -130,5 +132,68 @@ QueryResult execute_expr(QueryExecutor& executor, string expr)
 
 void disp_records(QueryResult& result)
 {
+	int* max = new int[result.relation.fields.size()];
+	for (int i = 0; i < result.relation.fields.size(); ++i)
+	{
+		max[i] = 2 + result.relation.fields[i].name.size();
+		if (max[i] < 8)
+		{
+			max[i] = 8;
+		}
+	}
+	for (int i = 0; i < result.records.size(); ++i)
+	{
+		for (int j = 0; j < result.relation.fields.size(); ++j)
+		{
+			if (result.relation.fields[j].type.tag == Type::Tag::CHAR)
+			{
+				if (max[j] < result.records[i].values[j].CHAR.size() + 2)
+				{
+					max[j] = result.records[i].values[j].CHAR.size() + 2;
+				}
+			}
+		}
+	}
+	draw_line(max, result.relation.fields.size());
+	for (int i = 0; i < result.relation.fields.size(); i++)
+	{
+		cout << "| " << setw(max[i]) << setiosflags(ios::left) << setfill(' ') << result.relation.fields[i].name << ' ';
+	}
+	cout << '|' << endl;
+	draw_line(max, result.relation.fields.size());
+	for (int i = 0; i < result.records.size(); i++)
+	{
+		for (int j = 0; j < result.relation.fields.size(); j++)
+		{
+			cout << "| " << setw(max[j]) << setiosflags(ios::left) << setfill(' ');
+			if (result.relation.fields[j].type.tag == Type::Tag::INT)
+			{
+				cout << ' ' << result.records[i].values[j].INT << ' ';
+			}
+			else if (result.relation.fields[j].type.tag == Type::Tag::FLOAT)
+			{
+				cout << ' ' << result.records[i].values[j].FLOAT << ' ';
+			}
+			else if (result.relation.fields[j].type.tag == Type::Tag::CHAR)
+			{
+				cout << ' ' << result.records[i].values[j].CHAR << ' ';
+			}
+		}
+		cout << '|' << endl;
+	}
+	draw_line(max, result.relation.fields.size());
+	delete[] max;
+}
 
+void draw_line(int* max, int size)
+{
+	for (int i = 0; i < size; i++)
+	{
+		cout << "+-";
+		for (int j = 0; j <= max[i]; j++)
+		{
+			cout << '-';
+		}
+	}
+	cout << '+' << endl;
 }

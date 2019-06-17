@@ -250,11 +250,16 @@ QueryResult QueryExecutor::insert_exe(InsertStatement* stmt){
 	{
 		throw logic_error("Relation not found.");
 	}
-	else if (relation->fields.size() < stmt->fields.size())
+	else if (!stmt->fields.null())
 	{
-		throw logic_error("Statement field size mismatch.");
+		if (relation->fields.size() != stmt->fields.value().size())
+		{
+			throw logic_error("Statement field size mismatch.");
+		}
 	}
+
 	Record r;
+	// by its order or by default order
 	for (pair<Type, Value> p : stmt->values)
 	{
 		r.values.push_back(p.second);
@@ -297,7 +302,7 @@ QueryResult QueryExecutor::delete_exe(DeleteStatement* stmt){
 	}
 	for (int i = 0; i < records.size(); ++i)
 	{
-		_storage_eng->delete_record(relation.value(), records[i]);
+		_storage_eng->delete_record(relation.value(), move(records[i]));
 	}
 	QueryResult q;
 	q.prompt = string_format("Query OK. %d rows deleted", count);
@@ -338,7 +343,9 @@ QueryResult QueryExecutor::update_exe(UpdateStatement* stmt) {
 	}
 	for (int i = 0; i < records.size(); ++i)
 	{
-		_storage_eng->delete_record(relation.value(), records[i]);
+		_storage_eng->update_record(relation.value(), move(records[i]), [](int i, Value & v)-> bool {
+
+		});
 	}
 	QueryResult q;
 	q.prompt = string_format("Query OK. %d rows deleted", count);
