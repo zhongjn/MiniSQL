@@ -54,7 +54,6 @@ RecordPosition RecordManager::insert_record(const Relation& rel, const Record& r
         insert_pos = rel_entry->free_head;
     }
 
-    // 2. 找到插入位置，设置use，如果用了free，那么指定新的free_head
     BlockGuard bg_record(block_mgr, rel_file, insert_pos.block_index);
     auto* rec_entry = bg_record.addr<RecordEntryData>(insert_pos.pos);
     if (free_used) {
@@ -62,23 +61,51 @@ RecordPosition RecordManager::insert_record(const Relation& rel, const Record& r
     }
     rec_entry->use = true;
 
-    // 3. 填入值
-    uint8_t* values_addr = rec_entry->values;
-    int i_field = 0;
-    for (auto& field : rel.fields) {
-        void* addr = values_addr + field.offset;
-        auto& value = values[i_field];
-        values[i_field].write(addr, field.type);
-        i_field++;
-    }
+    // 2. 找到插入位置，设置use，如果用了free，那么指定新的free_head
+    update_record(rel, insert_pos, record);
 
     bg.set_modified();
-    bg_record.set_modified();
-
     return insert_pos;
 }
 
 unique_ptr<Scanner> RecordManager::select_record(const Relation& rel, unique_ptr<IndexIterator> index_it)
 {
     return unique_ptr<Scanner>(new DiskScanner(block_mgr, rel, move(index_it)));
+}
+
+void RecordManager::delete_record(const Relation& rel, RecordPosition pos) {
+    auto& rel_file = Files::relation(rel.name);
+
+    BlockGuard bg(block_mgr, rel_file, 0);
+    auto* rel_entry = bg.addr<RelationEntryData>();
+    
+    BlockGuard bg_record(block_mgr, rel_file, pos.block_index);
+    auto* rec_entry = bg_record.addr<RecordEntryData>(pos.pos);
+
+    if (!rec_entry->use) throw logic_error("The record does not exsist.");
+
+    RecordPosition head_origin = rel_entry->free_head;
+    rel_entry->free_head = pos;
+    rec_entry->use = false;
+    rec_entry->free_next = head_origin;
+
+    bg_record.set_modified();
+    bg.set_modified();
+}
+
+void RecordManager::update_record(const Relation& rel, RecordPosition pos, const Record& record) {
+    auto& rel_file = Files::relation(rel.name);
+
+    BlockGuard bg_record(block_mgr, rel_file, pos.block_index);
+    auto* rec_entry = bg_record.addr<RecordEntryData>(pos.pos);
+
+    // 3. 填入值
+    uint8_t* values_addr = rec_entry->values;
+    int i_field = 0;
+    for (auto& field : rel.fields) {
+        void* addr = values_addr + field.offset;
+        record.values[i_field].write(addr, field.type);
+        i_field++;
+    }
+    bg_record.set_modified();
 }

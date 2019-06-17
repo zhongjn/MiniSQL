@@ -22,6 +22,7 @@ public:
     Value eval(const Record& record);
     void resolve(const Relation& rel);
     const string& target_name() { return _target_name; }
+	int get_field() { return field; }
 };
 
 class ConstantExpression : public Expression {
@@ -32,6 +33,7 @@ public:
     const Type& type() { return t; }
     Value eval(const Record& record) { return v; }
     void resolve(const Relation& rel) {}
+	const Value& get_val() { return v; }
 };
 
 class UniaryExpression : public Expression {
@@ -50,6 +52,7 @@ public:
     Value eval(const Record& record);
     const Type& type() { return _type; }
     void resolve(const Relation& rel);
+	Expression* get_r()	{ return _r.get(); }
 };
 
 class BinaryExpression : public Expression {
@@ -80,4 +83,7 @@ public:
     Value eval(const Record& record);
     const Type& type() { return _type; }
     void resolve(const Relation& rel);
+	Expression* get_r1() { return _r1.get(); }
+	Expression* get_r2() { return _r2.get(); }
+	Operator get_op() { return _op;	}
 };

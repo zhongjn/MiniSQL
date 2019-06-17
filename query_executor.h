@@ -15,6 +15,8 @@ class QueryExecutor {
     //RecordManager* _rm;
     StorageEngine* _storage_eng;
 
+	bool value_less(Nullable<Type> t, Nullable<Value> v1, Nullable<Value> v2);
+	Nullable<IndexUsage> search_index(BinaryExpression* exp, Relation& relation);
     unique_ptr<Scanner> select_scanner(SelectStatement* stmt);
     QueryResult select_exe(SelectStatement* stmt);
     QueryResult update_exe(UpdateStatement* stmt);

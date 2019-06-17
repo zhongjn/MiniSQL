@@ -159,10 +159,14 @@ public:
         }
         return *this;
     }
-    Value() = default;
-    Value(const Value& v) {
+    Value& operator=(const Value& v) {
         INT = v.INT;
         CHAR = v.CHAR;
+        return *this;
+    }
+    Value() = default;
+    Value(const Value& v) {
+        *this = v;
     }
     Value(Value&& v) noexcept {
         *this = move(v);
@@ -187,16 +191,16 @@ public:
 struct Record {
     vector<Value> values;
     RecordPosition physical_position;
-    Record() = default;
-    Record(Record&& rec) noexcept {
-        *this = move(rec);
-    }
-    Record& operator=(Record&& rec) noexcept {
-        if (&rec != this) {
-            values = move(rec.values);
-        }
-        return *this;
-    }
+    //Record() = default;
+    //Record(Record&& rec) noexcept {
+    //    *this = move(rec);
+    //}
+    //Record& operator=(Record&& rec) noexcept {
+    //    if (&rec != this) {
+    //        values = move(rec.values);
+    //    }
+    //    return *this;
+    //}
 };
 
 template<typename To, typename From>
