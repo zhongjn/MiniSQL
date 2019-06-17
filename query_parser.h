@@ -38,12 +38,21 @@ struct SelectStatement : public Statement {
     unique_ptr<Expression> where;
 };
 
+struct UpdateField {
+	unique_ptr<Expression> expr;
+	int field_index;
+	// Nullable<string> alias;
+};
+
 struct UpdateStatement : public Statement {
-    // TODO
+	string relation;
+	vector<UpdateField> set;
+	unique_ptr<Expression> where;
 };
 
 struct DeleteStatement : public Statement {
-    // TODO
+	string relation;
+	unique_ptr<Expression> where;
 };
 
 class QueryParser {

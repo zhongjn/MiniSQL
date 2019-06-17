@@ -12,6 +12,7 @@ public:
 };
 
 struct IndexUsage {
-    int field_index;
-    Nullable<Value> from, to;
+	int field_index;
+	Nullable<Value> from, to;
+	bool from_exclusive, to_exclusive;
 };
