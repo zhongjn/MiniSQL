@@ -87,7 +87,6 @@ bool QueryParser::left_binary_op_seq(ExprGen child, unique_ptr<Expression> & exp
         while (consume(op, ops)) {
             unique_ptr<Expression> next;
             assert((this->*child)(next));
-            // TODO: parse operator
             expr = unique_ptr<Expression>(new BinaryExpression(binary_op(op.content), move(expr), move(next)));
         }
         return true;
@@ -114,12 +113,110 @@ bool QueryParser::factor(unique_ptr<Expression> & expr) {
 }
 
 bool QueryParser::uniary(unique_ptr<Expression> & expr) {
-    // TODO: uniary
     if (consume("-") && factor(expr)) {
         expr = unique_ptr<Expression>(new UniaryExpression(UniaryExpression::Operator::NEG, move(expr)));
         return true;
     }
     return factor(expr);
+}
+
+
+bool QueryParser::insert_source(string& source)
+{
+	int save = _pos;
+	Token t;
+	if (consume(t, TokenType::identifier)) {
+		source = t.content;
+		return true;
+	}
+	return false;
+}
+
+bool QueryParser::insert_field(string& field)
+{
+	Token t;
+	assert(consume(t, TokenType::identifier));
+	field = t.content;
+	return true;
+}
+
+bool QueryParser::insert_value(pair<Type, Value>& value)
+{
+	Token t;
+	assert(consume(t, TokenType::literal));
+	value = literal(t.content);
+	return true;
+}
+
+bool QueryParser::insert_list(vector<string>& fields)
+{
+	bool first = true;
+	while (1) {
+		if (first || consume(",")) {
+			string f;
+			assert(insert_field(f));
+			fields.push_back(move(f));
+		}
+		else {
+			break;
+		}
+		first = false;
+	}
+	return fields.size() > 0;
+}
+
+bool QueryParser::insert_list(vector<pair<Type, Value>>& values)
+{
+	bool first = true;
+	while (1) {
+		if (first || consume(",")) {
+			pair<Type, Value> v;
+			assert(insert_value(v));
+			values.push_back(move(v));
+		}
+		else {
+			break;
+		}
+		first = false;
+	}
+	return values.size() > 0;
+}
+
+bool QueryParser::insert_stmt_inner(unique_ptr<InsertStatement>& stmt)
+{
+	int save = _pos;
+	if (reset(save) && consume("insert") && consume("into")) {
+		string into;
+		vector<string> fields;
+		vector<pair<Type, Value>> values;
+
+		assert(insert_source(into));
+		if (consume("(") && insert_list(fields) && consume(")")) {
+			stmt->fields = move(fields);
+		}
+		else {
+			Nullable<vector<string>> fields;
+			stmt->fields = move(fields);
+		}
+		assert(consume("values"));
+		assert(consume("(") && insert_list(values) && consume(")"));
+
+		stmt = unique_ptr<InsertStatement>(new InsertStatement());
+		stmt->into = move(into);
+		stmt->values = move(values);
+		return true;
+	}
+	return false;
+}
+
+bool QueryParser::insert_stmt(unique_ptr<Statement>& stmt)
+{
+	unique_ptr<InsertStatement> insert;
+	if (insert_stmt_inner(insert)) {
+		stmt = static_cast_unique_ptr<Statement>(move(insert));
+		return true;
+	}
+	return false;
 }
 
 bool QueryParser::select_field(SelectField & f) {
@@ -205,11 +302,142 @@ bool QueryParser::select_stmt(unique_ptr<Statement> & stmt) {
     return false;
 }
 
+bool QueryParser::update_source(string& source) {
+	int save = _pos;
+	Token t;
+	if (consume(t, TokenType::identifier)) {
+		source = t.content;
+		return true;
+	}
+	return false;
+}
+
+bool QueryParser::update_field(UpdateField& f)
+{
+	Token t;
+	assert(consume(t, TokenType::identifier));
+	f.item = t.content;
+	assert(consume("="));
+	assert(expression(f.expr));
+	return true;
+}
+
+bool QueryParser::update_list(vector<UpdateField> & fields)
+{
+	bool first = true;
+	while (1) {
+		if (first || consume(",")) {
+			UpdateField f;
+			assert(update_field(f));
+			fields.push_back(move(f));
+		}
+		else {
+			break;
+		}
+		first = false;
+	}
+	return fields.size() > 0;
+}
+
+bool QueryParser::update_stmt_inner(unique_ptr<UpdateStatement> & stmt)
+{
+	int save = _pos;
+	if (reset(save) && consume("update")) {
+		string relation;
+		vector<UpdateField> set;
+		unique_ptr<Expression> where;
+		
+		assert(update_source(relation));
+		assert(consume("set"));
+		assert(update_list(set));
+		if (consume("where")) {
+			assert(expression(where));
+		}
+		stmt = unique_ptr<UpdateStatement>(new UpdateStatement());
+		stmt->relation = move(relation);
+		stmt->set = move(set);
+		stmt->where = move(where);
+		return true;
+	}
+	return false;
+}
+
+bool QueryParser::update_stmt(unique_ptr<Statement>& stmt)
+{
+	unique_ptr<UpdateStatement> update;
+	if (update_stmt_inner(update)) {
+		stmt = static_cast_unique_ptr<Statement>(move(update));
+		return true;
+	}
+	return false;
+}
+
+bool QueryParser::delete_source(string& source) {
+	Token t;
+	if (consume(t, TokenType::identifier)) {
+		source = t.content;
+		return true;
+	}
+	return false;
+}
+
+bool QueryParser::delete_stmt_inner(unique_ptr<DeleteStatement>& stmt)
+{
+	int save = _pos;
+	if (reset(save) && consume("delete") && consume("from")) {
+		string relation;
+		unique_ptr<Expression> where;
+
+		assert(delete_source(relation));
+		
+		if (consume("where")) {
+			assert(expression(where));
+		}
+		stmt = unique_ptr<DeleteStatement>(new DeleteStatement());
+		stmt->relation = move(relation);
+		stmt->where = move(where);
+		return true;
+	}
+	return false;
+}
+
+bool QueryParser::delete_stmt(unique_ptr<Statement>& stmt)
+{
+	unique_ptr<DeleteStatement> delet;
+	if (delete_stmt_inner(delet)) {
+		stmt = static_cast_unique_ptr<Statement>(move(delet));
+		return true;
+	}
+	return false;
+}
+
+bool QueryParser::table_stmt(unique_ptr<Statement>& stmt)
+{
+
+}
+
+bool QueryParser::index_stmt(unique_ptr<Statement>& stmt)
+{
+
+}
+
 bool QueryParser::stmt(unique_ptr<Statement> & s) {
     int save = _pos;
     if (reset(save) && select_stmt(s)) {
         return true;
     }
+	else if (reset(save) && update_stmt(s)) {
+		return true;
+	}
+	else if (reset(save) && delete_stmt(s)) {
+		return true;
+	}
+	else if (reset(save) && table_stmt(s)) {
+		return true;
+	}
+	else if (reset(save) && index_stmt(s)) {
+		return true;
+	}
     return false;
 }
 
