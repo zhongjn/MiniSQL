@@ -1,8 +1,8 @@
 #pragma once
 #include "common.h"
 #include "nullable.h"
-
-// TODO: B-TreeÏà¹Ø
+#include "block_manager.h"
+// TODO: B-Treeï¿½ï¿½ï¿½
 class IndexIterator {
     Type _value_type;
     Nullable<Value> _start, _end;
@@ -12,6 +12,7 @@ public:
 };
 
 struct IndexUsage {
-    int field_index;
-    Nullable<Value> from, to;
+	int field_index;
+	Nullable<Value> from, to;
+	bool from_exclusive, to_exclusive;
 };
