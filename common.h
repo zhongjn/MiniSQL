@@ -140,10 +140,14 @@ struct Value {
         }
         return *this;
     }
-    Value() = default;
-    Value(const Value& v) {
+    Value& operator=(const Value& v) {
         INT = v.INT;
         CHAR = v.CHAR;
+        return *this;
+    }
+    Value() = default;
+    Value(const Value& v) {
+        *this = v;
     }
     Value(Value&& v) noexcept {
         *this = move(v);
