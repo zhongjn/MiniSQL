@@ -60,14 +60,19 @@ public:
     void update_record(const Relation& rel, Record&& record, function<Nullable<Value>(const Record& record, int field_index)> new_value) {
         if (record.physical_position.nil()) throw logic_error("Unexpected error. This record does not has a physical position."); 
         Record record_origin = record;
-        for (int field_index : rel.indexes) {
-            Nullable<Value> new_v = new_value(record_origin, field_index);
-            if (new_v) {
-                record.values[field_index] = new_v.value();
-                im.remove_item(rel, field_index, record_origin.values[field_index]);
-                im.add_item(rel, field_index, new_v.value(), record.physical_position);
-            }
-        }
+		for (int i = 0; i < rel.fields.size(); ++i)
+		{
+			Nullable<Value> new_v = new_value(record_origin, i);
+			if (new_v)
+			{
+				record.values[i] = new_v.value();
+				if (rel.fields[i].has_index)
+				{
+					im.remove_item(rel, i, record_origin.values[i]);
+					im.add_item(rel, i, new_v.value(), record.physical_position);
+				}
+			}
+		}
         rm.update_record(rel, record.physical_position, record);
     }
 

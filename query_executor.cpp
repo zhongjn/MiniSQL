@@ -343,9 +343,17 @@ QueryResult QueryExecutor::update_exe(UpdateStatement* stmt) {
 	}
 	for (int i = 0; i < records.size(); ++i)
 	{
-		_storage_eng->update_record(relation.value(), move(records[i]), [](int i, Value & v)-> bool {
-
-		});
+		_storage_eng->update_record(relation.value(), move(records[i]), 
+			[stmt, relation](const Record& record, int field_index) -> Nullable<Value> {
+				for (int i = 0; i < stmt->set.size(); ++i)
+				{
+					if (stmt->set[i].item == relation.value().fields[field_index].name)
+					{
+						return stmt->set[i].expr->eval(record);
+					}
+				}
+				return Null();
+			});
 	}
 	QueryResult q;
 	q.prompt = string_format("Query OK. %d rows deleted", count);
