@@ -311,7 +311,7 @@ QueryResult QueryExecutor::delete_exe(DeleteStatement* stmt){
 
 QueryResult QueryExecutor::update_exe(UpdateStatement* stmt) {
 	unique_ptr<Scanner> sc;
-	Nullable<Relation> relation = _storage_eng->get_relation(stmt->relation);
+	Nullable<Relation> relation = _storage_eng->get_relation(stmt->table);
 	int count = 0;
 	if (!relation)
 	{

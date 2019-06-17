@@ -396,10 +396,9 @@ bool QueryParser::create_table_field(CreateTableField& field)
 		field.type = Type::create_FLOAT();
 	}
 	else if (t.content == "char") {
-		field.type = Type::create_CHAR();
 		Token t0;
 		assert(consume("(") && consume(t0, TokenType::literal) && consume(")"));
-		field.type.length = t0.content;
+		field.type = Type::create_CHAR(literal(t0.content).second.INT);
 	}
 	else {
 		assert(false);
