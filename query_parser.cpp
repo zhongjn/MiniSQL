@@ -413,12 +413,12 @@ bool QueryParser::delete_stmt(unique_ptr<Statement>& stmt)
 
 bool QueryParser::table_stmt(unique_ptr<Statement>& stmt)
 {
-
+    throw "not implemented";
 }
 
 bool QueryParser::index_stmt(unique_ptr<Statement>& stmt)
 {
-
+    throw "not implemented";
 }
 
 bool QueryParser::stmt(unique_ptr<Statement> & s) {
