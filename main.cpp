@@ -96,13 +96,20 @@ int main(void)
 						}
 						str = ss_expr.str();
 						cout << "Executing command: " << str << endl;
-						QueryResult result = execute_expr(executor, str);
-						if (result.relation.fields.size() != 0)
+						try
 						{
-							// Show select results
-							disp_records(result);
+							QueryResult result = execute_expr(executor, str);
+							if (result.relation.fields.size() != 0)
+							{
+								// Show select results
+								disp_records(result);
+							}
+							cout << result.prompt << endl << endl;
 						}
-						cout << result.prompt << endl << endl;
+						catch (const std::exception& e)
+						{
+							cout << e.what() << endl;
+						}
 					}
 				}
 			}
