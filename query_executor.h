@@ -22,6 +22,10 @@ class QueryExecutor {
     QueryResult update_exe(UpdateStatement* stmt);
     QueryResult insert_exe(InsertStatement* stmt);
     QueryResult delete_exe(DeleteStatement* stmt);
+	QueryResult create_table_exe(CreateTableStatement* stmt);
+	QueryResult create_index_exe(CreateIndexStatement* stmt);
+	QueryResult drop_table_exe(DropTableStatement* stmt);
+	QueryResult drop_index_exe(DropIndexStatement* stmt);
 
 public:
     QueryExecutor(StorageEngine* storage_eng) : _storage_eng(storage_eng) {};

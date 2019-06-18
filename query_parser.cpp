@@ -58,7 +58,7 @@ BinaryExpression::Operator QueryParser::binary_op(const string& op) {
 }
 
 pair<Type, Value> QueryParser::literal(const string& lit) {
-    if (lit.front() == '\"' && lit.back() == '\"') {
+    if (lit.front() == '\'' && lit.back() == '\'') {
         // string
         string value = lit.substr(1, lit.length() - 2);
         return pair<Type, Value>(Type::create_CHAR(value.length() + 1), Value::create_CHAR(move(value)));
@@ -183,10 +183,6 @@ bool QueryParser::insert_stmt_inner(unique_ptr<InsertStatement>& stmt)
 
 		assert(string_identifier(into));
 		if (consume("(") && insert_list(fields) && consume(")")) {
-			stmt->fields = move(fields);
-		}
-		else {
-			Nullable<vector<string>> fields;
 			stmt->fields = move(fields);
 		}
 		assert(consume("values"));
@@ -403,10 +399,8 @@ bool QueryParser::create_table_field(CreateTableField& field)
 	else {
 		assert(false);
 	}
-	if (consume(t, TokenType::identifier)) {
-		string s;
-		assert(string_identifier(s));
-		field.limit = s;
+	if (consume(t, TokenType::keyword)) {
+		field.limit = t.content;
 	}
 	return true;
 }
@@ -415,7 +409,7 @@ bool QueryParser::create_table_list(vector<CreateTableField>& fields)
 {
 	bool first = true;
 	while (1) {
-		if (first || consume(",")) {
+		if (first || (consume(",") && !consume("primary"))) {
 			CreateTableField f;
 			assert(create_table_field(f));
 			fields.push_back(move(f));
@@ -431,16 +425,15 @@ bool QueryParser::create_table_list(vector<CreateTableField>& fields)
 bool QueryParser::create_table_stmt_inner(unique_ptr<CreateTableStatement>& stmt)
 {
 	int save = _pos;
-	if (reset(save) && consume("create") && consume("index")) {
+	if (reset(save) && consume("create") && consume("table")) {
 		string table;
 		vector<CreateTableField> fields;
 		string key;
 
-		assert(consume("create") && consume("table") && string_identifier(table));
+		assert(string_identifier(table));
 		assert(consume("("));
 		assert(create_table_list(fields));
-		assert(consume(","));
-		assert(consume("primary") && consume("key") && consume("(") && string_identifier(key) && consume(")"));
+		assert(consume("key") && consume("(") && string_identifier(key) && consume(")"));
 		assert(consume(")"));
 
 		stmt = unique_ptr<CreateTableStatement>(new CreateTableStatement());
@@ -495,7 +488,7 @@ bool QueryParser::create_index_stmt_inner(unique_ptr<CreateIndexStatement>& stmt
 		assert(string_identifier(indexname));
 		assert(consume("on"));
 		assert(string_identifier(table));
-		assert(consume("(") && string_identifier(indexname) && consume(")"));
+		assert(consume("(") && string_identifier(attribution) && consume(")"));
 		stmt = unique_ptr<CreateIndexStatement>(new CreateIndexStatement());
 		stmt->indexname = move(indexname);
 		stmt->table = move(table);
@@ -547,6 +540,9 @@ bool QueryParser::stmt(unique_ptr<Statement> & s) {
 		return true;
 	}
 	else if (reset(save) && delete_stmt(s)) {
+		return true;
+	}
+	else if (reset(save) && insert_stmt(s)) {
 		return true;
 	}
 	else if (reset(save) && create_table_stmt(s)) {
