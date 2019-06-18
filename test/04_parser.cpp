@@ -85,7 +85,7 @@ TEST_CASE(parser_update) {
 }
 
 TEST_CASE(parser_delete) {
-	auto tokens = QueryLexer().tokenize("delete from student where sno = '88888888'");
+	auto tokens = QueryLexer().tokenize("delete from student where sno = \"888''8\"\"8888\"");
 	auto stmt = QueryParser().parse(move(tokens));
 	assert(typeid(*stmt) == typeid(DeleteStatement), "stmt type");
 	auto ss = static_cast<DeleteStatement*>(stmt.release());

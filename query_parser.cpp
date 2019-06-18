@@ -565,5 +565,6 @@ unique_ptr<Statement> QueryParser::parse(vector<Token> tokens) {
     _pos = 0;
     unique_ptr<Statement> s;
     assert(stmt(s));
+    assert(_pos == _tokens.size());
     return s;
 }
