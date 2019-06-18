@@ -41,12 +41,12 @@ public:
     }
 
     void add_index(const Relation& rel, int field_index) {
-        cm.add_index(rel, field_index);
+        cm.add_index(rel.name, field_index);
         im.add_index(rel, field_index, rm.select_record(rel, nullptr));
     }
 
     void remove_index(const Relation& rel, int field_index) {
-        cm.remove_index(rel, field_index);
+        cm.remove_index(rel.name, field_index);
         im.remove_index(rel, field_index);
     }
 
