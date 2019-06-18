@@ -40,6 +40,15 @@ public:
         return cm.get_relation(name);
     }
 
+    int find_index(const Relation& rel, const string& index_name) {
+        for (int i = 0; i < rel.fields.size(); i++) {
+            if (rel.fields[i].index_name == index_name) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
     void add_index(const Relation& rel, int field_index) {
         cm.add_index(rel.name, field_index);
         im.add_index(rel, field_index, rm.select_record(rel, nullptr));
