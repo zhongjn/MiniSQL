@@ -3,7 +3,7 @@
 using namespace std::regex_constants;
 
 static TokenRegex regexes[] = {
-    TokenRegex{TokenType::literal, regex("^(?:[0-9]+(?:.[0-9]+)?)|^'((?:''|[^'])*)'")}, // TODO: string
+    TokenRegex{TokenType::literal, regex("^(?:[0-9]+(?:\\.[0-9]+)?)|^'((?:''|[^'])*)'")}, // TODO: string
     TokenRegex{TokenType::keyword, regex("^(?:select|delete|update|insert|from|where|and|or|is|unique)")},
     TokenRegex{TokenType::op, regex("^(?:\\+|-|\\*|/|>=|<=|>|<|==|!=|=)")},
     TokenRegex{TokenType::identifier, regex("^[a-zA-Z_][a-zA-Z_0-9]*")},
