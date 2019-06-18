@@ -10,21 +10,21 @@
 
 using namespace std;
 
-const int NAME_LENGTH = 32;
-const int MAX_FIELDS = 32;
-const int MAX_RELATIONS = 32;
-const int MAX_INDEXES = 16;
-const int MAX_RECORD_LENGTH = 1024;
+const int NAME_LENGTH = 32; // 名称最多多长
+const int MAX_FIELDS = 32; // 一个表最多有几个字段
+const int MAX_RELATIONS = 32; // 最多有几个表
+const int MAX_INDEXES = 16; // 最多有几个索引
+const int MAX_RECORD_LENGTH = 1024; // 一条记录最多多长
 
 
-
+// 代表数据库中的一个类型，可以是INT、FLOAT、或是CHAR(n)
 struct Type {
+    // tagged union
     enum class Tag {
         INT,
         CHAR,
         FLOAT
     } tag;
-    // Type type; // tagged union
     union {
         struct {
             int len;
@@ -48,7 +48,6 @@ struct Field {
     string name;
     int offset;
     bool unique = false;
-    // bool primary_key = false;
     bool has_index = false;
     string index_name;
     Type type;
@@ -104,6 +103,7 @@ struct DatabaseData {
 };
 static_assert(sizeof(DatabaseData) <= BLOCK_SIZE, "DatabaseData cannot be contained by a single block. Consider reorganize data.");
 
+// 代表一个记录位置
 struct RecordPosition {
     int block_index = -1;
     int pos = -1;
@@ -127,7 +127,7 @@ struct RecordPosition {
         return n;
     }
 };
-const RecordPosition RECORD_START = RecordPosition(0, 2048);
+const RecordPosition RECORD_START = RecordPosition(0, 2048); // 记录文件中，第一条记录的起始位置
 
 struct RelationEntryData {
     bool deleted = false;
@@ -142,6 +142,7 @@ struct RecordEntryData {
     uint8_t values[0];
 };
 
+// 代表数据库中的一个值
 struct Value {
 private:
 	template<typename T>
@@ -208,16 +209,6 @@ public:
 struct Record {
     vector<Value> values;
     RecordPosition physical_position;
-    //Record() = default;
-    //Record(Record&& rec) noexcept {
-    //    *this = move(rec);
-    //}
-    //Record& operator=(Record&& rec) noexcept {
-    //    if (&rec != this) {
-    //        values = move(rec.values);
-    //    }
-    //    return *this;
-    //}
 };
 
 template<typename To, typename From>
