@@ -58,14 +58,14 @@ Nullable<IndexUsage> QueryExecutor::search_index(BinaryExpression* exp, Relation
 			if (typeid(*(pcur->get_r1())) == typeid(FieldExpression) &&
 				typeid(*(pcur->get_r2())) == typeid(ConstantExpression))
 			{
-				ptr_field = dynamic_cast<FieldExpression*>(pcur->get_r1());
-				ptr_val = dynamic_cast<ConstantExpression*>(pcur->get_r2());
+				ptr_field = static_cast<FieldExpression*>(pcur->get_r1());
+				ptr_val = static_cast<ConstantExpression*>(pcur->get_r2());
 			}
 			else if (typeid(*(pcur->get_r2())) == typeid(FieldExpression) &&
 				typeid(*(pcur->get_r1())) == typeid(ConstantExpression))
 			{
-				ptr_field = dynamic_cast<FieldExpression*>(pcur->get_r2());
-				ptr_val = dynamic_cast<ConstantExpression*>(pcur->get_r1());
+				ptr_field = static_cast<FieldExpression*>(pcur->get_r2());
+				ptr_val = static_cast<ConstantExpression*>(pcur->get_r1());
 				inverse = true;
 			}
 
@@ -157,7 +157,7 @@ Nullable<IndexUsage> QueryExecutor::search_index(BinaryExpression* exp, Relation
 			if (typeid(*(pcur->get_r1())) == typeid(BinaryExpression))
 			{
 				// search for left subtree
-				pcur = dynamic_cast<BinaryExpression*>(pcur->get_r1());
+				pcur = static_cast<BinaryExpression*>(pcur->get_r1());
 			}
 			else
 			{
@@ -172,7 +172,7 @@ Nullable<IndexUsage> QueryExecutor::search_index(BinaryExpression* exp, Relation
 			if (typeid(*(pcur->get_r2())) == typeid(BinaryExpression))
 			{
 				// search for right subtree
-				pcur = dynamic_cast<BinaryExpression*>(pcur->get_r2());
+				pcur = static_cast<BinaryExpression*>(pcur->get_r2());
 			}
 			else
 			{
@@ -204,19 +204,11 @@ unique_ptr<Scanner> QueryExecutor::select_scanner(SelectStatement* stmt) {
         if (stmt->from->type == SelectSource::Type::physical) {
             auto ph_rel = _storage_eng->get_relation(stmt->from->physical);
             if (!ph_rel) throw logic_error("relation not found");
-			if (stmt->where)
+			if (stmt->where && typeid(*(stmt->where.get())) == typeid(BinaryExpression))
 			{
-				if (typeid(*(stmt->where.get())) == typeid(BinaryExpression))
-				{
-					// use index if binary expression
-					sc = _storage_eng->select_record(ph_rel->name,
-						search_index(dynamic_cast<BinaryExpression*>(stmt->where.get()), ph_rel.value()));
-				}
-				else
-				{
-					// don't if unary or else
-					sc = _storage_eng->select_record(ph_rel->name, Null());
-				}
+				// use index if binary expression
+				sc = _storage_eng->select_record(ph_rel->name,
+					search_index(static_cast<BinaryExpression*>(stmt->where.get()), ph_rel.value()));
 			}
 			else
 			{
@@ -252,19 +244,18 @@ QueryResult QueryExecutor::select_exe(SelectStatement* stmt) {
 }
 
 QueryResult QueryExecutor::insert_exe(InsertStatement* stmt){
-	QueryResult q;
-	Nullable<Relation> relation = _storage_eng->get_relation(stmt->into);
-	if (!relation)
-	{
-		throw logic_error("Relation not found.");
-	}
-	else if (!stmt->fields.null())
-	{
-		if (relation->fields.size() != stmt->fields.value().size())
-		{
-			throw logic_error("Statement field size mismatch.");
-		}
-	}
+	//Nullable<Relation> relation = _storage_eng->get_relation(stmt->into);
+	//if (!relation)
+	//{
+	//	throw logic_error("Relation not found.");
+	//}
+	//else if (!stmt->fields.null())
+	//{
+	//	if (relation->fields.size() != stmt->fields.value().size())
+	//	{
+	//		throw logic_error("Statement field size mismatch.");
+	//	}
+	//}
 
 	Record r;
 	// by its order or by default order
@@ -272,9 +263,10 @@ QueryResult QueryExecutor::insert_exe(InsertStatement* stmt){
 	{
 		r.values.push_back(p.second);
 	}
-	_storage_eng->insert_record(relation->name, move(r));
-	q.prompt = string_format("Query OK. 1 row inserted.");
-    return q;
+	_storage_eng->insert_record(stmt->into, move(r));
+	QueryResult t;
+	t.prompt = string_format("Query OK. 1 row inserted.");
+    return t;
 }
 
 QueryResult QueryExecutor::delete_exe(DeleteStatement* stmt){
@@ -286,11 +278,11 @@ QueryResult QueryExecutor::delete_exe(DeleteStatement* stmt){
 		throw logic_error("relation not found");
 	}
 	// index			
-	if (typeid(*(stmt->where.get())) == typeid(BinaryExpression))
+	if (stmt->where && typeid(*(stmt->where.get())) == typeid(BinaryExpression))
 	{
 		// use index if binary expression
 		sc = _storage_eng->select_record(relation->name,
-			search_index(dynamic_cast<BinaryExpression*>(stmt->where.get()), relation.value()));
+			search_index(static_cast<BinaryExpression*>(stmt->where.get()), relation.value()));
 	}
 	else
 	{
@@ -310,11 +302,62 @@ QueryResult QueryExecutor::delete_exe(DeleteStatement* stmt){
 	}
 	for (int i = 0; i < records.size(); ++i)
 	{
-		_storage_eng->delete_record(relation->name, move(records[i]));
+		_storage_eng->delete_record(stmt->relation, move(records[i]));
 	}
-	QueryResult q;
-	q.prompt = string_format("Query OK. %d rows deleted", count);
-    return q;
+	QueryResult t;
+	t.prompt = string_format("Query OK. %d rows deleted", count);
+    return t;
+}
+
+QueryResult QueryExecutor::create_table_exe(CreateTableStatement * stmt)
+{
+	Relation r = Relation(stmt->table);
+	for (CreateTableField& f : stmt->fields)
+	{
+		Field field;
+		field.name = f.name;
+		field.type = f.type;
+		field.unique = f.limit && f.limit.value() == "unique";
+		if (stmt->key == f.name)
+		{
+			field.has_index = true;
+			field.index_name = "PRIMARY_KEY";
+		}
+		else
+		{
+			field.has_index = false;
+			field.index_name = "";
+		}
+	}
+	r.update();
+	_storage_eng->add_relation(r);
+	QueryResult t;
+	t.prompt = "Query OK. Table created";
+	return t;
+}
+
+QueryResult QueryExecutor::create_index_exe(CreateIndexStatement * stmt)
+{
+	_storage_eng->add_index(stmt->table, stmt->attribution, stmt->indexname);
+	QueryResult t;
+	t.prompt = "Query OK. Index created";
+	return t;
+}
+
+QueryResult QueryExecutor::drop_table_exe(DropTableStatement * stmt)
+{
+	_storage_eng->remove_relation(stmt->table);
+	QueryResult t;
+	t.prompt = "Query OK. Table dropped";
+	return t;
+}
+
+QueryResult QueryExecutor::drop_index_exe(DropIndexStatement * stmt)
+{
+	_storage_eng->remove_index(stmt->indexname);
+	QueryResult t;
+	t.prompt = "Query OK. Index created";
+	return t;
 }
 
 QueryResult QueryExecutor::update_exe(UpdateStatement* stmt) {
@@ -330,7 +373,7 @@ QueryResult QueryExecutor::update_exe(UpdateStatement* stmt) {
 	{
 		// use index if binary expression
 		sc = _storage_eng->select_record(relation->name,
-			search_index(dynamic_cast<BinaryExpression*>(stmt->where.get()), relation.value()));
+			search_index(static_cast<BinaryExpression*>(stmt->where.get()), relation.value()));
 	}
 	else
 	{
@@ -352,7 +395,7 @@ QueryResult QueryExecutor::update_exe(UpdateStatement* stmt) {
 	for (int i = 0; i < records.size(); ++i)
 	{
 		_storage_eng->update_record(relation->name, move(records[i]),
-			[stmt, relation](const Record& record, int field_index) -> Nullable<Value> {
+			[stmt, &relation](const Record& record, int field_index) -> Nullable<Value> {
 				for (int i = 0; i < stmt->set.size(); ++i)
 				{
 					if (stmt->set[i].item == relation.value().fields[field_index].name)
@@ -363,9 +406,9 @@ QueryResult QueryExecutor::update_exe(UpdateStatement* stmt) {
 				return Null();
 			});
 	}
-	QueryResult q;
-	q.prompt = string_format("Query OK. %d rows deleted", count);
-	return q;
+	QueryResult t;
+	t.prompt = string_format("Query OK. %d rows deleted", count);
+	return t;
 }
 
 QueryResult QueryExecutor::execute(unique_ptr<Statement> stmt) {
@@ -382,4 +425,20 @@ QueryResult QueryExecutor::execute(unique_ptr<Statement> stmt) {
     if (tt == typeid(DeleteStatement)) {
         return delete_exe((DeleteStatement*)stmt.get());
     }
+	if (tt == typeid(CreateTableStatement))
+	{
+		return create_table_exe((CreateTableStatement*)stmt.get());
+	}
+	if (tt == typeid(CreateIndexStatement))
+	{
+		return create_index_exe((CreateIndexStatement*)stmt.get());
+	}
+	if (tt == typeid(DropTableStatement))
+	{
+		return drop_table_exe((DropTableStatement*)stmt.get());
+	}
+	if (tt == typeid(DropIndexStatement))
+	{
+		return drop_index_exe((DropIndexStatement*)stmt.get());
+	}
 }
