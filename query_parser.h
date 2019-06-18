@@ -52,7 +52,6 @@ struct UpdateStatement : public Statement {
 struct DeleteStatement : public Statement {
 	string relation;
 	unique_ptr<Expression> where;
-
 };
 
 struct CreateTableField {
