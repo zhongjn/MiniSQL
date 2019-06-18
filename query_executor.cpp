@@ -78,6 +78,7 @@ Nullable<IndexUsage> QueryExecutor::search_index(BinaryExpression* exp, Relation
 			}
 			if (candidate_index == candidates.size())
 			{
+				ptr_field->resolve(relation);
 				candidates.push_back(IndexUsage{
 					ptr_field->get_field(),
 					Null(), Null(),
@@ -153,15 +154,15 @@ Nullable<IndexUsage> QueryExecutor::search_index(BinaryExpression* exp, Relation
 		if (pcur)
 		{
 			s.push(pcur);
-		}
-		if (typeid(*(pcur->get_r1())) == typeid(BinaryExpression))
-		{
-			// search for left subtree
-			pcur = dynamic_cast<BinaryExpression*>(pcur->get_r1());
-		}
-		else
-		{
-			pcur = NULL;
+			if (typeid(*(pcur->get_r1())) == typeid(BinaryExpression))
+			{
+				// search for left subtree
+				pcur = dynamic_cast<BinaryExpression*>(pcur->get_r1());
+			}
+			else
+			{
+				pcur = NULL;
+			}
 		}
 
 		while (!pcur && !s.empty())
@@ -203,15 +204,22 @@ unique_ptr<Scanner> QueryExecutor::select_scanner(SelectStatement* stmt) {
         if (stmt->from->type == SelectSource::Type::physical) {
             auto ph_rel = _storage_eng->get_relation(stmt->from->physical);
             if (!ph_rel) throw logic_error("relation not found");
-			if (typeid(*(stmt->where.get())) == typeid(BinaryExpression))
+			if (stmt->where)
 			{
-				// use index if binary expression
-				sc = _storage_eng->select_record(ph_rel.value(),
-					search_index(dynamic_cast<BinaryExpression*>(stmt->where.get()), ph_rel.value()));
+				if (typeid(*(stmt->where.get())) == typeid(BinaryExpression))
+				{
+					// use index if binary expression
+					sc = _storage_eng->select_record(ph_rel.value(),
+						search_index(dynamic_cast<BinaryExpression*>(stmt->where.get()), ph_rel.value()));
+				}
+				else
+				{
+					// don't if unary or else
+					sc = _storage_eng->select_record(ph_rel.value(), Null());
+				}
 			}
 			else
 			{
-				// don't if unary or else
 				sc = _storage_eng->select_record(ph_rel.value(), Null());
 			}
         }
@@ -311,7 +319,7 @@ QueryResult QueryExecutor::delete_exe(DeleteStatement* stmt){
 
 QueryResult QueryExecutor::update_exe(UpdateStatement* stmt) {
 	unique_ptr<Scanner> sc;
-	Nullable<Relation> relation = _storage_eng->get_relation(stmt->relation);
+	Nullable<Relation> relation = _storage_eng->get_relation(stmt->table);
 	int count = 0;
 	if (!relation)
 	{

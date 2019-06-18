@@ -121,23 +121,14 @@ bool QueryParser::uniary(unique_ptr<Expression> & expr) {
 }
 
 
-bool QueryParser::insert_source(string& source)
+bool QueryParser::string_identifier(string& string)
 {
-	int save = _pos;
 	Token t;
 	if (consume(t, TokenType::identifier)) {
-		source = t.content;
+		string = t.content;
 		return true;
 	}
 	return false;
-}
-
-bool QueryParser::insert_field(string& field)
-{
-	Token t;
-	assert(consume(t, TokenType::identifier));
-	field = t.content;
-	return true;
 }
 
 bool QueryParser::insert_value(pair<Type, Value>& value)
@@ -154,7 +145,7 @@ bool QueryParser::insert_list(vector<string>& fields)
 	while (1) {
 		if (first || consume(",")) {
 			string f;
-			assert(insert_field(f));
+			assert(string_identifier(f));
 			fields.push_back(move(f));
 		}
 		else {
@@ -190,7 +181,7 @@ bool QueryParser::insert_stmt_inner(unique_ptr<InsertStatement>& stmt)
 		vector<string> fields;
 		vector<pair<Type, Value>> values;
 
-		assert(insert_source(into));
+		assert(string_identifier(into));
 		if (consume("(") && insert_list(fields) && consume(")")) {
 			stmt->fields = move(fields);
 		}
@@ -302,16 +293,6 @@ bool QueryParser::select_stmt(unique_ptr<Statement> & stmt) {
     return false;
 }
 
-bool QueryParser::update_source(string& source) {
-	int save = _pos;
-	Token t;
-	if (consume(t, TokenType::identifier)) {
-		source = t.content;
-		return true;
-	}
-	return false;
-}
-
 bool QueryParser::update_field(UpdateField& f)
 {
 	Token t;
@@ -343,18 +324,18 @@ bool QueryParser::update_stmt_inner(unique_ptr<UpdateStatement> & stmt)
 {
 	int save = _pos;
 	if (reset(save) && consume("update")) {
-		string relation;
+		string table;
 		vector<UpdateField> set;
 		unique_ptr<Expression> where;
 		
-		assert(update_source(relation));
+		assert(string_identifier(table));
 		assert(consume("set"));
 		assert(update_list(set));
 		if (consume("where")) {
 			assert(expression(where));
 		}
 		stmt = unique_ptr<UpdateStatement>(new UpdateStatement());
-		stmt->relation = move(relation);
+		stmt->table = move(table);
 		stmt->set = move(set);
 		stmt->where = move(where);
 		return true;
@@ -372,15 +353,6 @@ bool QueryParser::update_stmt(unique_ptr<Statement>& stmt)
 	return false;
 }
 
-bool QueryParser::delete_source(string& source) {
-	Token t;
-	if (consume(t, TokenType::identifier)) {
-		source = t.content;
-		return true;
-	}
-	return false;
-}
-
 bool QueryParser::delete_stmt_inner(unique_ptr<DeleteStatement>& stmt)
 {
 	int save = _pos;
@@ -388,7 +360,7 @@ bool QueryParser::delete_stmt_inner(unique_ptr<DeleteStatement>& stmt)
 		string relation;
 		unique_ptr<Expression> where;
 
-		assert(delete_source(relation));
+		assert(string_identifier(relation));
 		
 		if (consume("where")) {
 			assert(expression(where));
@@ -411,14 +383,159 @@ bool QueryParser::delete_stmt(unique_ptr<Statement>& stmt)
 	return false;
 }
 
-bool QueryParser::table_stmt(unique_ptr<Statement>& stmt)
+bool QueryParser::create_table_field(CreateTableField& field)
 {
-    throw "not implemented";
+	Token t;
+	assert(consume(t, TokenType::identifier));
+	field.name = t.content;
+	assert(consume(t, TokenType::identifier));
+	if (t.content == "int") {
+		field.type = Type::create_INT();
+	}
+	else if (t.content == "float") {
+		field.type = Type::create_FLOAT();
+	}
+	else if (t.content == "char") {
+		Token t0;
+		assert(consume("(") && consume(t0, TokenType::literal) && consume(")"));
+		field.type = Type::create_CHAR(literal(t0.content).second.INT);
+	}
+	else {
+		assert(false);
+	}
+	if (consume(t, TokenType::identifier)) {
+		string s;
+		assert(string_identifier(s));
+		field.limit = s;
+	}
+	return true;
 }
 
-bool QueryParser::index_stmt(unique_ptr<Statement>& stmt)
+bool QueryParser::create_table_list(vector<CreateTableField>& fields)
 {
-    throw "not implemented";
+	bool first = true;
+	while (1) {
+		if (first || consume(",")) {
+			CreateTableField f;
+			assert(create_table_field(f));
+			fields.push_back(move(f));
+		}
+		else {
+			break;
+		}
+		first = false;
+	}
+	return fields.size() > 0;
+}
+
+bool QueryParser::create_table_stmt_inner(unique_ptr<CreateTableStatement>& stmt)
+{
+	int save = _pos;
+	if (reset(save) && consume("create") && consume("index")) {
+		string table;
+		vector<CreateTableField> fields;
+		string key;
+
+		assert(consume("create") && consume("table") && string_identifier(table));
+		assert(consume("("));
+		assert(create_table_list(fields));
+		assert(consume(","));
+		assert(consume("primary") && consume("key") && consume("(") && string_identifier(key) && consume(")"));
+		assert(consume(")"));
+
+		stmt = unique_ptr<CreateTableStatement>(new CreateTableStatement());
+		stmt->table = move(table);
+		stmt->fields = move(fields);
+		stmt->key = move(key);
+		return true;
+	}
+	return false;
+}
+
+bool QueryParser::create_table_stmt(unique_ptr<Statement>& stmt)
+{
+	unique_ptr<CreateTableStatement> create_table;
+	if (create_table_stmt_inner(create_table)) {
+		stmt = static_cast_unique_ptr<Statement>(move(create_table));
+		return true;
+	}
+	return false;
+}
+
+bool QueryParser::drop_table_stmt_inner(unique_ptr<DropTableStatement>& stmt)
+{
+	int save = _pos;
+	if (reset(save) && consume("drop") && consume("table")) {
+		Token t;
+		assert(consume(t, TokenType::identifier));
+		stmt = unique_ptr<DropTableStatement>(new DropTableStatement());
+		stmt->table = move(t.content);
+		return true;
+	}
+	return false;
+}
+
+bool QueryParser::drop_table_stmt(unique_ptr<Statement>& stmt)
+{
+	unique_ptr<DropTableStatement> drop_table;
+	if (drop_table_stmt_inner(drop_table)) {
+		stmt = static_cast_unique_ptr<Statement>(move(drop_table));
+		return true;
+	}
+	return false;
+}
+
+bool QueryParser::create_index_stmt_inner(unique_ptr<CreateIndexStatement>& stmt)
+{
+	int save = _pos;
+	if (reset(save) && consume("create") && consume("index")) {
+		string indexname;
+		string table;
+		string attribution;
+		assert(string_identifier(indexname));
+		assert(consume("on"));
+		assert(string_identifier(table));
+		assert(consume("(") && string_identifier(indexname) && consume(")"));
+		stmt = unique_ptr<CreateIndexStatement>(new CreateIndexStatement());
+		stmt->indexname = move(indexname);
+		stmt->table = move(table);
+		stmt->attribution = move(attribution);
+		return true;
+	}
+	return false;
+}
+
+bool QueryParser::create_index_stmt(unique_ptr<Statement>& stmt)
+{
+	unique_ptr<CreateIndexStatement> create_index;
+	if (create_index_stmt_inner(create_index)) {
+		stmt = static_cast_unique_ptr<Statement>(move(create_index));
+		return true;
+	}
+	return false;
+}
+
+bool QueryParser::drop_index_stmt_inner(unique_ptr<DropIndexStatement>& stmt)
+{
+	int save = _pos;
+	if (reset(save) && consume("drop") && consume("index")) {
+		string indexname;
+		assert(string_identifier(indexname));
+		stmt = unique_ptr<DropIndexStatement>(new DropIndexStatement());
+		stmt->indexname = move(indexname);
+		return true;
+	}
+	return false;
+}
+
+bool QueryParser::drop_index_stmt(unique_ptr<Statement>& stmt)
+{
+	unique_ptr<DropIndexStatement> drop_index;
+	if (drop_index_stmt_inner(drop_index)) {
+		stmt = static_cast_unique_ptr<Statement>(move(drop_index));
+		return true;
+	}
+	return false;
 }
 
 bool QueryParser::stmt(unique_ptr<Statement> & s) {
@@ -432,10 +549,16 @@ bool QueryParser::stmt(unique_ptr<Statement> & s) {
 	else if (reset(save) && delete_stmt(s)) {
 		return true;
 	}
-	else if (reset(save) && table_stmt(s)) {
+	else if (reset(save) && create_table_stmt(s)) {
 		return true;
 	}
-	else if (reset(save) && index_stmt(s)) {
+	else if (reset(save) && drop_table_stmt(s)) {
+		return true;
+	}
+	else if (reset(save) && create_index_stmt(s)) {
+		return true;
+	}
+	else if (reset(save) && drop_index_stmt(s)) {
 		return true;
 	}
     return false;

@@ -9,7 +9,6 @@ TEST_CASE(scanner_disk_filter) {
     Relation rel("test_table");
     Field f_id("id", Type::create_INT());
     f_id.unique = true;
-    f_id.primary_key = true;
     rel.fields.push_back(f_id);
     rel.fields.push_back(Field("name", Type::create_CHAR(20)));
     rel.fields.push_back(Field("contact", Type::create_CHAR(20)));
@@ -68,7 +67,6 @@ TEST_CASE(scanner_project) {
     Relation rel("test_table");
     Field f_id("id", Type::create_INT());
     f_id.unique = true;
-    f_id.primary_key = true;
     rel.fields.push_back(f_id);
     rel.fields.push_back(Field("name", Type::create_CHAR(20)));
     rel.fields.push_back(Field("contact", Type::create_CHAR(20)));
