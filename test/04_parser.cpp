@@ -131,7 +131,7 @@ TEST_CASE(parser_create_index) {
 	auto ss = static_cast<CreateIndexStatement*>(stmt.release());
 
 	assert(ss->indexname == "i", "indexname");
-	assert(ss->table == "table", "table");
+	assert(ss->table == "student", "table");
 	assert(ss->attribution == "sname", "attribution");
 }
 
