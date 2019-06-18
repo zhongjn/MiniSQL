@@ -328,6 +328,7 @@ QueryResult QueryExecutor::create_table_exe(CreateTableStatement * stmt)
 			field.has_index = false;
 			field.index_name = "";
 		}
+		r.fields.push_back(field);
 	}
 	r.update();
 	_storage_eng->add_relation(r);
