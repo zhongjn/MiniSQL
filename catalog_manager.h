@@ -11,13 +11,20 @@ using namespace std;
 
 class CatalogManager {
     BlockManager* block_mgr;
-    void set_index(const string& rel_name, int field_index, bool use_index);
+    void set_index_rel(const string& rel_name, int field_index, bool use_index);
+    //void add_index_rel(const string& rel_name, int field_index);
+    //void remove_index_rel(const string& rel_name, int field_index);
 
 public:
     CatalogManager(BlockManager* block_mgr);
     void add_relation(const Relation& relation);
     void remove_relation(const string& name);
     Nullable<Relation> get_relation(const string& name);
-    void add_index(const string& rel_name, int field_index);
-    void remove_index(const string& rel_name, int field_index);
+
+    void add_index(const string& rel_name, const string& field_name, const string& index_name);
+    
+    void remove_index(const string& index_name);
+
+    Nullable<IndexLocation> get_index_location(const string& index_name);
+
 };

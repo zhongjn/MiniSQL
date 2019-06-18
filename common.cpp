@@ -13,14 +13,14 @@ int Type::length() const {
 
 FieldData Field::to_file() const {
     if (name.length() >= NAME_LENGTH) throw logic_error("Exceeded maximum name length");
-    if (index_name.length() >= NAME_LENGTH) throw logic_error("Exceeded maximum index name length");
+    // if (index_name.length() >= NAME_LENGTH) throw logic_error("Exceeded maximum index name length");
 
     FieldData f;
     strcpy(f.name, name.c_str());
     f.type = type;
     f.unique = unique;
     f.has_index = has_index;
-    strcpy(f.index_name, index_name.c_str());
+    // strcpy(f.index_name, index_name.c_str());
     return f;
 }
 
@@ -29,7 +29,7 @@ void Field::from_file(const FieldData & f) {
     type = f.type;
     unique = f.unique;
     has_index = f.has_index;
-    index_name = f.index_name;
+    // index_name = f.index_name;
 }
 
 void Relation::update() {
@@ -77,9 +77,12 @@ void Relation::from_file(const RelationData& f) {
     update();
 }
 
+void IndexLocation::from_file(const IndexNameLocationData& f) {
+    field = f.field;
+    relation_name = f.relation_name;
+}
 
-
-int DatabaseData::get_block_index(const char* relation_name) const {
+int DatabaseData::get_block(const char* relation_name) const {
     for (int i = 0; i < MAX_RELATIONS; i++) {
         if (strcmp(relation_name, rel_names[i]) == 0) {
             return i + 1;
@@ -88,7 +91,7 @@ int DatabaseData::get_block_index(const char* relation_name) const {
     return -1; // not found
 }
 
-int DatabaseData::get_free_block_index() const {
+int DatabaseData::get_free_block() const {
     for (int i = 0; i < MAX_RELATIONS; i++) {
         if (rel_names[i][0] == 0) {
             return i + 1;
@@ -96,6 +99,25 @@ int DatabaseData::get_free_block_index() const {
     }
     return -1;
 }
+
+int DatabaseData::get_index(const char* index_name) const {
+    for (int i = 0; i < MAX_INDEXES; i++) {
+        if (strcmp(index_name, indexes[i].index_name) == 0) {
+            return i;
+        }
+    }
+    return -1; // not found
+}
+
+int DatabaseData::get_free_index() const {
+    for (int i = 0; i < MAX_INDEXES; i++) {
+        if (indexes[i].index_name[0] == 0) {
+            return i;
+        }
+    }
+    return -1; // not found
+}
+
 bool Value::greater_than(const struct Value& x, Type type)
 {
 	using Tag = Type::Tag;

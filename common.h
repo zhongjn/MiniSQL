@@ -13,6 +13,7 @@ using namespace std;
 const int NAME_LENGTH = 32;
 const int MAX_FIELDS = 32;
 const int MAX_RELATIONS = 32;
+const int MAX_INDEXES = 16;
 const int MAX_RECORD_LENGTH = 1024;
 
 
@@ -39,7 +40,7 @@ struct FieldData {
     char name[NAME_LENGTH] = { 0 }; // 名字
     bool unique;
     bool has_index;
-    char index_name[NAME_LENGTH] = { 0 };
+   //  char index_name[NAME_LENGTH] = { 0 };
     Type type;
 };
 
@@ -49,7 +50,7 @@ struct Field {
     bool unique = false;
     // bool primary_key = false;
     bool has_index = false;
-    string index_name;
+    // string index_name;
     Type type;
 
     FieldData to_file() const;
@@ -78,11 +79,26 @@ struct Relation {
     // Relation(Relation&& rel) = default;
 };
 
+struct IndexNameLocationData {
+    char index_name[NAME_LENGTH];
+    char relation_name[NAME_LENGTH];
+    int field;
+};
+
+struct IndexLocation {
+    string relation_name;
+    int field;
+    void from_file(const IndexNameLocationData& f);
+};
+
 // 数据库在文件中的表示。必须放在独立的文件中。
 struct DatabaseData {
     char rel_names[MAX_RELATIONS][NAME_LENGTH] = { 0 }; // 存储relation名。rel_names[i]的relation，将处于本文件第i+1个块中。
-    int get_block_index(const char* relation_name) const;
-    int get_free_block_index() const;
+    IndexNameLocationData indexes[MAX_INDEXES] = { 0 };
+    int get_block(const char* relation_name) const;
+    int get_free_block() const;
+    int get_index(const char* index_name) const;
+    int get_free_index() const;
     int block_to_rel(int i) { return i - 1; }
     int rel_to_block(int i) { return i + 1; }
 };

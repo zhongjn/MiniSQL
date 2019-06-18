@@ -7,8 +7,8 @@ class IndexIterator {
     Type _value_type;
     Nullable<Value> _start, _end;
 public:
-    bool next() { throw "not implemented"; }
-    RecordPosition current() { throw "not implemented"; }
+    bool next() { throw logic_error("not implemented"); }
+    RecordPosition current() { throw logic_error("not implemented"); }
 };
 
 struct IndexUsage {

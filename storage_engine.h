@@ -40,34 +40,62 @@ public:
         return cm.get_relation(name);
     }
 
-    int find_index(const Relation& rel, const string& index_name) {
-        for (int i = 0; i < rel.fields.size(); i++) {
-            if (rel.fields[i].index_name == index_name) {
-                return i;
-            }
-        }
-        return -1;
+    Relation get_relation_exist(const string& name) {
+        Nullable<Relation> nrel = get_relation(name);
+        if (nrel.null()) throw logic_error("Relation not found");
+        return nrel.value();
     }
 
-    void add_index(const Relation& rel, int field_index) {
-        cm.add_index(rel.name, field_index);
-        im.add_index(rel, field_index, rm.select_record(rel, nullptr));
+    //int find_index(const Relation& rel, const string& index_name) {
+    //    for (int i = 0; i < rel.fields.size(); i++) {
+    //        if (rel.fields[i].index_name == index_name) {
+    //            return i;
+    //        }
+    //    }
+    //    return -1;
+    //}
+
+    //void add_index(const Relation& rel, int field_index) {
+    //    cm.add_index(rel.name, field_index);
+    //    im.add_index(rel, field_index, rm.select_record(rel, nullptr));
+    //}
+
+    //void remove_index(const Relation& rel, int field_index) {
+    //    cm.remove_index(rel.name, field_index);
+    //    im.remove_index(rel, field_index);
+    //}
+
+    void add_index(const string& rel_name, const string& field_name, const string& index_name) {
+        cm.add_index(rel_name, field_name, index_name);
+        Relation rel = get_relation_exist(rel_name);
+        IndexLocation il = cm.get_index_location(index_name).value();
+        im.add_index(rel, il.field, rm.select_record(rel, nullptr));
     }
 
-    void remove_index(const Relation& rel, int field_index) {
-        cm.remove_index(rel.name, field_index);
-        im.remove_index(rel, field_index);
+    void remove_index(const string& index_name) {
+        Nullable<IndexLocation> il = cm.get_index_location(index_name);
+        if (il.null()) throw logic_error("Index not found");
+
+        Relation rel = get_relation_exist(il->relation_name);
+
+        cm.remove_index(index_name);
+        im.remove_index(rel, il->field);
     }
 
-    void insert_record(const Relation& rel, Record&& record) {
+
+    void insert_record(const string& rel_name, Record&& record) {
+        Relation rel = get_relation_exist(rel_name);
         RecordPosition pos = rm.insert_record(rel, record);
+
         for (int field_index : rel.indexes) {
             im.add_item(rel, field_index, record.values[field_index], pos);
         }
     }
 
-    void update_record(const Relation& rel, Record&& record, function<Nullable<Value>(const Record& record, int field_index)> new_value) {
+    void update_record(const string& rel_name, Record&& record, function<Nullable<Value>(const Record& record, int field_index)> new_value) {
         if (record.physical_position.nil()) throw logic_error("Unexpected error. This record does not has a physical position."); 
+        Relation rel = get_relation_exist(rel_name);
+
         Record record_origin = record;
 		for (int i = 0; i < rel.fields.size(); ++i)
 		{
@@ -85,15 +113,18 @@ public:
         rm.update_record(rel, record.physical_position, record);
     }
 
-    void delete_record(const Relation& rel, Record&& record) {
+    void delete_record(const string& rel_name, Record&& record) {
         if (record.physical_position.nil()) throw logic_error("Unexpected error. This record does not has a physical position.");
+        Relation rel = get_relation_exist(rel_name);
+
         rm.delete_record(rel, record.physical_position);
         for (int field_index : rel.indexes) {
             im.remove_item(rel, field_index, record.values[field_index]);
         }
     }
 
-    unique_ptr<Scanner> select_record(const Relation& rel, Nullable<IndexUsage> index_usage) {
+    unique_ptr<Scanner> select_record(const string& rel_name, Nullable<IndexUsage> index_usage) {
+        Relation rel = get_relation_exist(rel_name);
         return rm.select_record(rel, get_index_iterator(rel, index_usage));
     }
 

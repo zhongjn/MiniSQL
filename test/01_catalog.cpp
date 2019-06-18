@@ -1,7 +1,7 @@
 #include "test.h"
 #include "../catalog_manager.h"
 
-TEST_CASE(catalog) {
+TEST_CASE(catalog_relation) {
 
     {
         BlockManager bm;
@@ -36,5 +36,38 @@ TEST_CASE(catalog) {
         assert(f1.name == "name" && !f1.unique && f1.type.tag == Type::Tag::CHAR && f1.type.CHAR.len == 20 && f1.offset == 4, "field info");
         auto& f2 = fields[2];
         assert(f2.name == "contact" && !f2.unique && f2.type.tag == Type::Tag::CHAR && f2.type.CHAR.len == 20 && f2.offset == 24, "field info");
+    }
+}
+
+TEST_CASE(catalog_index) {
+    {
+        BlockManager bm;
+        CatalogManager cm(&bm);
+
+        if (cm.get_index_location("test_my_index")) {
+            cm.remove_index("test_my_index");
+        }
+    }
+
+    {
+        BlockManager bm;
+        CatalogManager cm(&bm);
+
+        cm.add_index("test_table", "id", "test_my_index");
+        Nullable<IndexLocation> il = cm.get_index_location("test_my_index");
+        assert(il, "index not found");
+        assert(il->field == 0, "field");
+        assert(il->relation_name == "test_table", "relation");
+
+
+    }
+
+    {
+        BlockManager bm;
+        CatalogManager cm(&bm);
+
+        // cm.add_index("test_table", "name", "some_invalid_index");
+        cm.remove_index("test_my_index");
+        assert(cm.get_index_location("test_my_index").null(), "not deleted");
     }
 }

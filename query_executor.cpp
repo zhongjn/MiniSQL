@@ -209,18 +209,18 @@ unique_ptr<Scanner> QueryExecutor::select_scanner(SelectStatement* stmt) {
 				if (typeid(*(stmt->where.get())) == typeid(BinaryExpression))
 				{
 					// use index if binary expression
-					sc = _storage_eng->select_record(ph_rel.value(),
+					sc = _storage_eng->select_record(ph_rel->name,
 						search_index(dynamic_cast<BinaryExpression*>(stmt->where.get()), ph_rel.value()));
 				}
 				else
 				{
 					// don't if unary or else
-					sc = _storage_eng->select_record(ph_rel.value(), Null());
+					sc = _storage_eng->select_record(ph_rel->name, Null());
 				}
 			}
 			else
 			{
-				sc = _storage_eng->select_record(ph_rel.value(), Null());
+				sc = _storage_eng->select_record(ph_rel->name, Null());
 			}
         }
         else {
@@ -272,7 +272,7 @@ QueryResult QueryExecutor::insert_exe(InsertStatement* stmt){
 	{
 		r.values.push_back(p.second);
 	}
-	_storage_eng->insert_record(relation.value(), move(r));
+	_storage_eng->insert_record(relation->name, move(r));
 	q.prompt = string_format("Query OK. 1 row inserted.");
     return q;
 }
@@ -289,13 +289,13 @@ QueryResult QueryExecutor::delete_exe(DeleteStatement* stmt){
 	if (typeid(*(stmt->where.get())) == typeid(BinaryExpression))
 	{
 		// use index if binary expression
-		sc = _storage_eng->select_record(relation.value(),
+		sc = _storage_eng->select_record(relation->name,
 			search_index(dynamic_cast<BinaryExpression*>(stmt->where.get()), relation.value()));
 	}
 	else
 	{
 		// don't if unary or else
-		sc = _storage_eng->select_record(relation.value(), Null());
+		sc = _storage_eng->select_record(relation->name, Null());
 	}
 	if (stmt->where)
 	{
@@ -310,7 +310,7 @@ QueryResult QueryExecutor::delete_exe(DeleteStatement* stmt){
 	}
 	for (int i = 0; i < records.size(); ++i)
 	{
-		_storage_eng->delete_record(relation.value(), move(records[i]));
+		_storage_eng->delete_record(relation->name, move(records[i]));
 	}
 	QueryResult q;
 	q.prompt = string_format("Query OK. %d rows deleted", count);
@@ -329,13 +329,13 @@ QueryResult QueryExecutor::update_exe(UpdateStatement* stmt) {
 	if (typeid(*(stmt->where.get())) == typeid(BinaryExpression))
 	{
 		// use index if binary expression
-		sc = _storage_eng->select_record(relation.value(),
+		sc = _storage_eng->select_record(relation->name,
 			search_index(dynamic_cast<BinaryExpression*>(stmt->where.get()), relation.value()));
 	}
 	else
 	{
 		// don't if unary or else
-		sc = _storage_eng->select_record(relation.value(), Null());
+		sc = _storage_eng->select_record(relation->name, Null());
 	}
 	if (stmt->where)
 	{
@@ -351,7 +351,7 @@ QueryResult QueryExecutor::update_exe(UpdateStatement* stmt) {
 	}
 	for (int i = 0; i < records.size(); ++i)
 	{
-		_storage_eng->update_record(relation.value(), move(records[i]), 
+		_storage_eng->update_record(relation->name, move(records[i]),
 			[stmt, relation](const Record& record, int field_index) -> Nullable<Value> {
 				for (int i = 0; i < stmt->set.size(); ++i)
 				{
