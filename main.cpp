@@ -74,7 +74,6 @@ int main(void)
 				}
 				else
 				{
-					string temp;
 					while (true)
 					{
 						ss_expr = stringstream();
@@ -95,8 +94,9 @@ int main(void)
 						{
 							break;
 						}
-						cout << "Executing command: " << ss_expr.str() << endl;
-						QueryResult result = execute_expr(executor, ss_expr.str());
+						str = ss_expr.str();
+						cout << "Executing command: " << str << endl;
+						QueryResult result = execute_expr(executor, str);
 						if (result.relation.fields.size() != 0)
 						{
 							// Show select results

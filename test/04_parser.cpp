@@ -95,24 +95,64 @@ TEST_CASE(parser_delete) {
 }
 
 TEST_CASE(parser_create_table) {
-	auto tokens = QueryLexer().tokenize("create table student (sno char(8), sname char(16) unique, sage int, primary key(sno))");
+	//auto tokens = QueryLexer().tokenize("create table student (sno char(8), sname char(16) unique, sage int, primary key(sno))");
+	//auto stmt = QueryParser().parse(move(tokens));
+	//assert(typeid(*stmt) == typeid(CreateTableStatement), "stmt type");
+	//auto ss = static_cast<CreateTableStatement*>(stmt.release());
+
+	//assert(ss->table == "student", "table");
+	//assert(ss->fields[0].name == "sno", "f0 name");
+	//assert(ss->fields[0].type.tag == Type::Tag::CHAR, "f0 type");
+	//assert(ss->fields[0].type.length() == 8, "f0 type length");
+	//assert(ss->fields[0].limit.null(), "f0 limit");
+	//assert(ss->fields[1].name == "sname", "f1 name");
+	//assert(ss->fields[1].type.tag == Type::Tag::CHAR, "f1 type");
+	//assert(ss->fields[1].type.length() == 16, "f1 type length");
+	//assert(ss->fields[1].limit.value() == "unique", "f1 limit");
+	//assert(ss->fields[2].name == "sage", "f2 name");
+	//assert(ss->fields[2].type.tag == Type::Tag::INT, "f2 type");
+	//assert(ss->fields[2].limit.null(), "f2 limit");
+	//assert(ss->key == "sno", "key");
+	auto tokens = QueryLexer().tokenize("create table person ( \n\
+		height float,\n\
+		pid int,\n\
+		name char(32),\n\
+		identity char(128) unique,\n\
+		age int,\n\
+		primary key(pid)\n\
+	)");
 	auto stmt = QueryParser().parse(move(tokens));
 	assert(typeid(*stmt) == typeid(CreateTableStatement), "stmt type");
 	auto ss = static_cast<CreateTableStatement*>(stmt.release());
 
-	assert(ss->table == "student", "table");
-	assert(ss->fields[0].name == "sno", "f0 name");
-	assert(ss->fields[0].type.tag == Type::Tag::CHAR, "f0 type");
-	assert(ss->fields[0].type.length() == 8, "f0 type length");
-	assert(ss->fields[0].limit.null(), "f0 limit");
-	assert(ss->fields[1].name == "sname", "f1 name");
-	assert(ss->fields[1].type.tag == Type::Tag::CHAR, "f1 type");
-	assert(ss->fields[1].type.length() == 16, "f1 type length");
-	assert(ss->fields[1].limit.value() == "unique", "f1 limit");
-	assert(ss->fields[2].name == "sage", "f2 name");
-	assert(ss->fields[2].type.tag == Type::Tag::INT, "f2 type");
-	assert(ss->fields[2].limit.null(), "f2 limit");
-	assert(ss->key == "sno", "key");
+	assert(ss->table == "person", "table");
+
+	assert(ss->fields[0].name == "height", "f 0 name");
+	assert(ss->fields[0].type.tag == Type::Tag::FLOAT, "f 0 type");
+	//assert(ss->fields[0].type.length() == 8, "f0 type length");
+	assert(ss->fields[0].limit.null(), "f 0 limit");
+
+	assert(ss->fields[1].name == "pid", "f 1 name");
+	assert(ss->fields[1].type.tag == Type::Tag::INT, "f 1 type");
+	//assert(ss->fields[1].type.length() == 32, "f 1 type length");
+	assert(ss->fields[1].limit.null(), "f 1 limit");
+
+	assert(ss->fields[2].name == "name", "f 2 name");
+	assert(ss->fields[2].type.tag == Type::Tag::CHAR, "f 2 type");
+	assert(ss->fields[2].type.length() == 32, "f 2 type length");
+	assert(ss->fields[2].limit.null(), "f 2 limit");
+
+	assert(ss->fields[3].name == "identity", "f 2 name");
+	assert(ss->fields[3].type.tag == Type::Tag::CHAR, "f 2 type");
+	assert(ss->fields[3].type.length() == 128, "f 2 type length");
+	assert(ss->fields[3].limit.value() == "unique", "f 2 limit");
+
+	assert(ss->fields[4].name == "age", "f 4 name");
+	assert(ss->fields[4].type.tag == Type::Tag::INT, "f 4 type");
+	//assert(ss->fields[1].type.length() == 32, "f 1 type length");
+	assert(ss->fields[4].limit.null(), "f 4 limit");
+
+	assert(ss->key == "pid", "key");
 }
 
 TEST_CASE(parser_drop_table) {

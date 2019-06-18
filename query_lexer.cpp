@@ -10,7 +10,7 @@ static TokenRegex regexes[] = {
     TokenRegex{TokenType::punctuation, regex("^[.,;\\*\\(\\)]")},
 };
 
-static regex regex_space("^\\s+");
+static regex regex_space("^[ \\t\\n]+");
 
 vector<Token> QueryLexer::tokenize(const string& str) {
     vector<Token> tokens;
