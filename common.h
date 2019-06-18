@@ -40,7 +40,7 @@ struct FieldData {
     char name[NAME_LENGTH] = { 0 }; // Ãû×Ö
     bool unique;
     bool has_index;
-   //  char index_name[NAME_LENGTH] = { 0 };
+    char index_name[NAME_LENGTH] = { 0 };
     Type type;
 };
 
@@ -50,7 +50,7 @@ struct Field {
     bool unique = false;
     // bool primary_key = false;
     bool has_index = false;
-    // string index_name;
+    string index_name;
     Type type;
 
     FieldData to_file() const;
