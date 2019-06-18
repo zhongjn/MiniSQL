@@ -31,9 +31,9 @@ void CatalogManager::set_index_rel(const string & rel_name, int field_index, boo
         field.has_index = use_index;
         bg_rel.set_modified();
     }
-    else {
-        throw logic_error(use_index ? "The index alread exists" : "The index does not exist");
-    }
+    //else {
+    //    throw logic_error(use_index ? "The index alread exists" : "The index does not exist");
+    //}
 }
 
 CatalogManager::CatalogManager(BlockManager * block_mgr) : block_mgr(block_mgr) {
