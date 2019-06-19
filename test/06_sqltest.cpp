@@ -9,5 +9,6 @@ TEST_CASE(table_select_0_sql) {
 	remove("data/catalog.dat");
 	StorageEngine eng;
 	QueryExecutor executor(&eng);
-	execute_file(executor, "sql/table-select-0.sql");
+    cout << endl;
+	assert(execute_file(executor, "sql/table-select-0.sql"), "");
 }
