@@ -45,6 +45,17 @@ TEST_CASE(executor_expr_where) {
     }
 }
 
+TEST_CASE(executor_where_logic) {
+    StorageEngine eng;
+
+    auto tokens = QueryLexer().tokenize("select * from test_table where id>=1 and (name='Li Si' or name='Zhang San')");
+    auto stmt = QueryParser().parse(move(tokens));
+    auto table = QueryExecutor(&eng).execute(move(stmt));
+
+    assert(table.records.size() == 2, "record count");
+
+}
+
 TEST_CASE(executor_nested) {
     StorageEngine eng;
 

@@ -57,6 +57,8 @@ public:
 
 class BinaryExpression : public Expression {
 public:
+    // *不要随便改变运算符的顺序*
+    // 在后面判断运算符类型时要用到
     enum class Operator {
         EQ,
         NE,
@@ -64,12 +66,12 @@ public:
         GT,
         LE,
         GE,
+        AND,
+        OR,
         ADD,
         SUB,
         MUL,
-        DIV,
-        AND,
-        OR
+        DIV
     };
 private:
     bool _resolved = false;

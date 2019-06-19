@@ -5,17 +5,6 @@
 
 using namespace std;
 
-void execute_expr(QueryExecutor& executor, string expr)
-{
-	QueryResult result = executor.execute(QueryParser().parse(QueryLexer().tokenize(expr)));
-	if (result.relation.fields.size() != 0)
-	{
-		// Show select results
-		disp_records(result);
-	}
-	cout << result.prompt << endl << endl;
-}
-
 void disp_records(QueryResult& result)
 {
 	int* max = new int[result.relation.fields.size()];
@@ -72,6 +61,18 @@ void disp_records(QueryResult& result)
 	delete[] max;
 }
 
+bool execute_safe_print(QueryExecutor& executor, const string& expr)
+{
+    QueryResult result = execute_safe(executor, expr);
+    if (result.relation.fields.size() != 0)
+    {
+        // Show select results
+        disp_records(result);
+    }
+    cout << result.prompt << endl << endl;
+    return !result.failed;
+}
+
 void draw_line(int* max, int size)
 {
 	for (int i = 0; i < size; i++)
@@ -85,7 +86,8 @@ void draw_line(int* max, int size)
 	cout << '+' << endl;
 }
 
-void execute_file(QueryExecutor& executor, string filename)
+
+void execute_file(QueryExecutor& executor, const string& filename)
 {
 	ifstream ifs = ifstream(filename, ios::in);
 	string str;
@@ -118,13 +120,11 @@ void execute_file(QueryExecutor& executor, string filename)
 			}
 			str = ss_expr.str();
 			cout << "Executing command: " << str << endl;
-			QueryResult result = executor.execute(QueryParser().parse(QueryLexer().tokenize(str)));
-			if (result.relation.fields.size() != 0)
-			{
-				// Show select results
-				disp_records(result);
-			}
-			cout << result.prompt << endl << endl;
+            bool succeeded = execute_safe_print(executor, str);
+            if (!succeeded) {
+                cout << "Executing aborted due to previous error." << endl;
+                break;
+            }
 		}
 	}
 }

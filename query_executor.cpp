@@ -419,43 +419,33 @@ QueryResult QueryExecutor::update_exe(UpdateStatement* stmt) {
 
 QueryResult QueryExecutor::execute(unique_ptr<Statement> stmt) {
     auto& tt = typeid(*stmt);
-	try
-	{
-		if (tt == typeid(SelectStatement)) {
-			return select_exe((SelectStatement*)stmt.get());
-		}
-		if (tt == typeid(UpdateStatement)) {
-			return update_exe((UpdateStatement*)stmt.get());
-		}
-		if (tt == typeid(InsertStatement)) {
-			return insert_exe((InsertStatement*)stmt.get());
-		}
-		if (tt == typeid(DeleteStatement)) {
-			return delete_exe((DeleteStatement*)stmt.get());
-		}
-		if (tt == typeid(CreateTableStatement))
-		{
-			return create_table_exe((CreateTableStatement*)stmt.get());
-		}
-		if (tt == typeid(CreateIndexStatement))
-		{
-			return create_index_exe((CreateIndexStatement*)stmt.get());
-		}
-		if (tt == typeid(DropTableStatement))
-		{
-			return drop_table_exe((DropTableStatement*)stmt.get());
-		}
-		if (tt == typeid(DropIndexStatement))
-		{
-			return drop_index_exe((DropIndexStatement*)stmt.get());
-		}
-	}
-	catch (const std::logic_error& e)
-	{	
-		QueryResult t;
-		t.failed = true;
-		t.prompt = "Query failed. " + string(e.what());
-		return t;
-	}
+    if (tt == typeid(SelectStatement)) {
+        return select_exe((SelectStatement*)stmt.get());
+    }
+    if (tt == typeid(UpdateStatement)) {
+        return update_exe((UpdateStatement*)stmt.get());
+    }
+    if (tt == typeid(InsertStatement)) {
+        return insert_exe((InsertStatement*)stmt.get());
+    }
+    if (tt == typeid(DeleteStatement)) {
+        return delete_exe((DeleteStatement*)stmt.get());
+    }
+    if (tt == typeid(CreateTableStatement))
+    {
+        return create_table_exe((CreateTableStatement*)stmt.get());
+    }
+    if (tt == typeid(CreateIndexStatement))
+    {
+        return create_index_exe((CreateIndexStatement*)stmt.get());
+    }
+    if (tt == typeid(DropTableStatement))
+    {
+        return drop_table_exe((DropTableStatement*)stmt.get());
+    }
+    if (tt == typeid(DropIndexStatement))
+    {
+        return drop_index_exe((DropIndexStatement*)stmt.get());
+    }
 
 }
