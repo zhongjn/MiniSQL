@@ -1,6 +1,7 @@
 #include "test.h"
 #include "../query_parser.h"
 
+
 TEST_CASE(parser_select_simple) {
     auto tokens = QueryLexer().tokenize("select a from test");
     auto stmt = QueryParser().parse(move(tokens));
@@ -8,10 +9,10 @@ TEST_CASE(parser_select_simple) {
 
     auto ss = static_cast<SelectStatement*>(stmt.release());
 
-    assert(ss->select.size() == 1, "field count");
-    assert(ss->select[0].expr->name == "a", "expr name");
+    assert(ss->select->size() == 1, "field count");
+    assert(ss->select.value()[0].expr->name == "a", "expr name");
 
-    auto expr = ss->select[0].expr.get();
+    auto expr = ss->select.value()[0].expr.get();
     assert(typeid(*expr) == typeid(FieldExpression), "expr type");
     
     auto fe = static_cast<FieldExpression*>(expr);
@@ -24,6 +25,17 @@ TEST_CASE(parser_select_simple) {
 }
 
 TEST_CASE(parser_select_expr) {
+    Relation rel;
+    auto tokens = QueryLexer().tokenize("select 3+4*7+2");
+    auto stmt = QueryParser().parse(move(tokens));
+    assert(typeid(*stmt) == typeid(SelectStatement), "stmt type");
+    auto ss = static_cast<SelectStatement*>(stmt.release());
+    auto expr = ss->select.value()[0].expr.get();
+    expr->resolve(rel);
+    assert(expr->eval(Record()).INT == 33, "result");
+}
+
+TEST_CASE(parser_select_expr_from) {
 
     Relation rel;
     rel.fields.push_back(Field("b", Type::create_CHAR(10)));
@@ -34,7 +46,7 @@ TEST_CASE(parser_select_expr) {
     assert(typeid(*stmt) == typeid(SelectStatement), "stmt type");
 
     auto ss = static_cast<SelectStatement*>(stmt.release());
-    auto expr = ss->select[0].expr.get();
+    auto expr = ss->select.value()[0].expr.get();
 
     assert(expr->name == "C", "expr name");
 

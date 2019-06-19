@@ -33,7 +33,7 @@ struct SelectField {
 };
 
 struct SelectStatement : public Statement {
-    vector<SelectField> select;
+    Nullable<vector<SelectField>> select;
     Nullable<SelectSource> from;
     unique_ptr<Expression> where;
 };

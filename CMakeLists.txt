@@ -56,3 +56,9 @@ add_executable (MiniSQL "main.cpp" ${project_headers} ${project_sources})
 
 # Tests
 add_executable (TestEntry 	"test/test.h" "test/test.cpp" ${project_headers} ${project_sources} ${tests})
+
+add_custom_command(
+		TARGET TestEntry POST_BUILD
+		COMMAND ${CMAKE_COMMAND} -E copy_directory
+				${CMAKE_SOURCE_DIR}/test/sql
+				${CMAKE_CURRENT_BINARY_DIR}/sql)
