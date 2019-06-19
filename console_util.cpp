@@ -3,6 +3,8 @@
 #include <iostream>
 #include <fstream>
 
+//#define DISABLE_PROMPT
+
 using namespace std;
 
 void disp_records(QueryResult& result)
@@ -64,12 +66,14 @@ void disp_records(QueryResult& result)
 bool execute_safe_print(QueryExecutor& executor, const string& expr)
 {
     QueryResult result = execute_safe(executor, expr);
+#ifndef DISABLE_PROMPT
     if (result.relation.fields.size() != 0)
     {
         // Show select results
         disp_records(result);
     }
-    //cout << result.prompt << endl << endl;
+    cout << result.prompt << endl << endl;
+#endif
     return !result.failed;
 }
 
@@ -119,11 +123,13 @@ void execute_file(QueryExecutor& executor, const string& filename)
 				break;
 			}
 			str = ss_expr.str();
-			//cout << "Executing command: " << str << endl;
+#ifndef DISABLE_PROMPT
+			cout << "Executing command: " << str << endl;
+#endif
             bool succeeded = execute_safe_print(executor, str);
             if (!succeeded) {
                 cout << "Executing aborted due to previous error." << endl;
-                //break;
+                break;
             }
 		}
 	}
