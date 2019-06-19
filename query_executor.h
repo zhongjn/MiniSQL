@@ -8,6 +8,7 @@ struct QueryResult {
     Relation relation;
     vector<Record> records;
     string prompt;
+	bool failed;
 };
 
 class QueryExecutor {
