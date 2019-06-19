@@ -4,7 +4,9 @@
 #include "nullable.h"
 #include "index.h"
 #include "scanner.h"
-#include<vector>
+#include <vector>
+#include <algorithm>
+
 struct tree_information {
 	int root;
 	int degree;
@@ -101,6 +103,7 @@ public:
 				num = temp_block;
 			}
 		}
+        sort(vr.begin(), vr.end());
 		return IndexIterator(vr); 
 	};
 	// TODO: 对一列删除一个值

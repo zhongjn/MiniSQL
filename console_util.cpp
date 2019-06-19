@@ -73,6 +73,8 @@ bool execute_safe_print(QueryExecutor& executor, const string& expr)
         disp_records(result);
     }
     cout << result.prompt << endl << endl;
+#else
+    if (result.failed) cout << result.prompt << endl << endl;
 #endif
     return !result.failed;
 }

@@ -105,8 +105,8 @@ private:
     // parse a sequence by given left associative binary operators
     bool left_binary_op_seq(ExprGen child, unique_ptr<Expression>& expr, initializer_list<const char*> ops);
     bool factor(unique_ptr<Expression>& expr);
-    bool uniary(unique_ptr<Expression>& expr);
-    bool seq_muldiv(unique_ptr<Expression>& expr) { return left_binary_op_seq(&QueryParser::uniary, expr, { "*", "/" }); }
+    bool Unary(unique_ptr<Expression>& expr);
+    bool seq_muldiv(unique_ptr<Expression>& expr) { return left_binary_op_seq(&QueryParser::Unary, expr, { "*", "/" }); }
     bool seq_addsub(unique_ptr<Expression>& expr) { return left_binary_op_seq(&QueryParser::seq_muldiv, expr, { "+", "-" }); }
     bool seq_cmp(unique_ptr<Expression>& expr) { return left_binary_op_seq(&QueryParser::seq_addsub, expr, { ">=", "<=", ">", "<" }); }
     bool seq_eq(unique_ptr<Expression>& expr) { return left_binary_op_seq(&QueryParser::seq_cmp, expr, { "==", "=", "is", "!=" }); }

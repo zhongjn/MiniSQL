@@ -129,6 +129,10 @@ struct RecordPosition {
 };
 const RecordPosition RECORD_START = RecordPosition(0, 2048); // 记录文件中，第一条记录的起始位置
 
+inline bool operator<(RecordPosition rp1, RecordPosition rp2) {
+    return RecordPosition::cmp(rp1, rp2) < 0;
+}
+
 struct RelationEntryData {
     bool deleted = false;
     RecordPosition free_head;

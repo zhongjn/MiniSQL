@@ -17,14 +17,14 @@ bool is_alg_type(Type t) {
     return t.tag == T::INT || t.tag == T::FLOAT;
 }
 
-using Op1 = UniaryExpression::Operator;
+using Op1 = UnaryExpression::Operator;
 
 Value FieldExpression::eval(const Record& record) {
     if (!_resolved) throw exception("not resolved");
     return record.values[field];
 }
 
-Value UniaryExpression::eval(const Record& record) {
+Value UnaryExpression::eval(const Record& record) {
     if (!_resolved) throw exception("not resolved");
     Value v = _r->eval(record);
     Value vr;
@@ -43,7 +43,7 @@ Value UniaryExpression::eval(const Record& record) {
     return vr;
 }
 
-void UniaryExpression::resolve(const Relation & rel) {
+void UnaryExpression::resolve(const Relation & rel) {
     _r->resolve(rel);
     Type t = _r->type();
     if (_op == Op1::NEG && is_alg_type(t)) {
