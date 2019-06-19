@@ -10,6 +10,7 @@ public:
     virtual Record& current() = 0;
     virtual bool next() = 0;
     virtual const Relation& rel_out() = 0;
+    virtual ~Scanner() {}
 };
 
 template<typename Cont, typename It = Cont::iterator>

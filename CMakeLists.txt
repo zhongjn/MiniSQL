@@ -60,5 +60,5 @@ add_executable (TestEntry 	"test/test.h" "test/test.cpp" ${project_headers} ${pr
 add_custom_command(
 		TARGET TestEntry POST_BUILD
 		COMMAND ${CMAKE_COMMAND} -E copy_directory
-				${CMAKE_SOURCE_DIR}/test/sql
+				${CMAKE_SOURCE_DIR}/sql
 				${CMAKE_CURRENT_BINARY_DIR}/sql)
