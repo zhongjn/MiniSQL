@@ -125,19 +125,19 @@ bool Value::greater_than(const struct Value& x, Type type)
 	{
 	case Tag::INT:
 	{
-		if (this->INT > x.INT)
+		if (this->INT >= x.INT)
 			return true;
 		else return false;
 	}
 	case Tag::CHAR:
 	{
-		if (this->CHAR > x.CHAR)
+		if (this->CHAR >= x.CHAR)
 			return true;
 		return false;
 	}
 	default:
 	{
-		if (this->FLOAT > x.FLOAT)
+		if (this->FLOAT >= x.FLOAT)
 			return true;
 		return false;
 	}

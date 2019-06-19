@@ -1,5 +1,6 @@
 #include "index_manager.h"
 #include"common.h"
+#include<iostream>
 IndexManager::IndexManager(BlockManager* block_mgr) :block_mgr(block_mgr){}
 void IndexManager::add_index(const Relation& rel, int field_index, unique_ptr<Scanner> scanner)
 {
@@ -46,9 +47,8 @@ void IndexManager::insert_record(string& scheme, Type type,RecordPosition record
 	BlockGuard bg(block_mgr, scheme, num);
 	*bg.addr<RecordPosition>(offset) = record_pos;
 }
-Value IndexManager::get_value(string& scheme, Type type, int num, int degree, int pos)
+Value IndexManager::get_value(BlockGuard& bg,string& scheme, Type type, int num, int degree, int pos)
 {
-	BlockGuard bg(block_mgr, scheme, num);
 	int offset = sizeof(treenode) + pos * type.length();
 	Value temp; 
 	temp.parse(bg.addr<void>(offset),type);
@@ -59,22 +59,33 @@ void IndexManager::insert_block(string& scheme, Type type, int block_index, int 
 {
 	int offset = sizeof(treenode) + degree * type.length() + pos * sizeof(int);
 	BlockGuard bg(block_mgr, scheme, num);
-	block_index = *bg.addr<int>(offset);
+	*bg.addr<int>(offset) = block_index;
 }
 void IndexManager::shift_value(string& scheme, Type type, int degree, int num, int pos, int direction)
 {
 	Value temp_value;
+	BlockGuard bg(block_mgr, scheme, num);
 	if (direction > 0)for (int i = degree - 2; i >= pos; i--)
 	{	
-		temp_value = get_value(scheme, type, num, degree, i);
-		insert_value(scheme, type, temp_value, degree,num, i + 1);
+		//temp_value = get_value(bg,scheme, type, num, degree, i);
+		int offset = sizeof(treenode) + i * type.length();
+		int offset1 = sizeof(treenode) + (i+1) * type.length();
+		void* sour = bg.addr<void>(offset);
+		void* dest = bg.addr<void>(offset1);
+		memcpy(dest, sour, type.length());
+		//insert_value(scheme, type, temp_value, degree,num, i + 1);
 	}
 	else
 	{
 		for (int i = pos; i < degree - 1; i++)
 		{
-			temp_value = get_value(scheme, type, num, degree, i);
-			insert_value(scheme, type, temp_value, degree, num, i - 1);
+			//temp_value = get_value(bg, scheme, type, num, degree, i);
+			//insert_value(scheme, type, temp_value, degree, num, i - 1);
+			int offset = sizeof(treenode) + i * type.length();
+			int offset1 = sizeof(treenode) + (i -1) * type.length();
+			void* sour = bg.addr<void>(offset);
+			void* dest = bg.addr<void>(offset1);
+			memcpy(dest, sour, type.length());
 		}
 	}
 }
@@ -105,14 +116,14 @@ void IndexManager::shift_record(string& scheme, Type type, int degree, int num, 
 void IndexManager::shift_block(string& scheme, Type type, int degree, int num, int pos, int direction)
 {
 	int temp_block;
-	if (direction > 0)for (int i = degree - 2; i >= pos; i--)
+	if (direction > 0)for (int i = degree; i >= pos; i--)
 	{
 		temp_block = get_block(scheme, type, num, degree, i);
 		insert_block(scheme, type, temp_block, degree, num, i + 1);
 	}
 	else
 	{
-		for (int i = pos; i < degree - 1; i++)
+		for (int i = pos; i <= degree ; i++)
 		{
 			temp_block = get_block(scheme, type, num,degree,i);
 			insert_block(scheme, type, temp_block, degree, num, i - 1);
@@ -127,7 +138,7 @@ void IndexManager::delete_parent_information(string& scheme, Type type, int num,
 	Value temp_value;
 	for (i = 0; i < tree_info->size; i++)
 	{
-		temp_value = get_value(scheme, type, num, degree, i);
+		temp_value = get_value(bg,scheme, type, num, degree, i);
 		if (Value::cmp(type, temp_value, value) == 0)
 			break;
 	}
@@ -146,12 +157,12 @@ void IndexManager::merge_leaf(string&scheme, Type type, int left_leaf, int right
 	RecordPosition temp_record;
 	for (int i = 0; i < right_info->size; i++)
 	{
-		temp_value = get_value(scheme, type, right_leaf, degree, i);
+		temp_value = get_value(right_bg,scheme, type, right_leaf, degree, i);
 		insert_value(scheme, type, temp_value, degree, left_leaf, left_info->size + i);
 		temp_record = get_record(scheme, type, right_leaf, degree, i);
 		insert_record(scheme, type, temp_record, degree, left_leaf, left_info->size + i);
 	}
-	temp_value = get_value(scheme, type, right_leaf,degree, 0);
+	temp_value = get_value(right_bg,scheme, type, right_leaf,degree, 0);
 	delete_parent_information(scheme, type, right_info->fa,temp_value, degree);
 	left_info->size += right_info->size;
 	left_info->next = right_info->next;
@@ -170,7 +181,7 @@ void IndexManager::merge_nonleaf(string&scheme, Type type, int left_nonleaf, int
 	insert_block(scheme, type, temp_block, degree, left_nonleaf, left_info->size + 1);
 	for (int i = 1; i < right_info->size; i++)
 	{
-		temp_value = get_value(scheme, type, right_nonleaf, degree, i);
+		temp_value = get_value(right_bg,scheme, type, right_nonleaf, degree, i);
 		insert_value(scheme, type, temp_value, degree, left_nonleaf, left_info->size + i);
 		temp_block = get_block(scheme, type, right_nonleaf, degree, i+1);
 		insert_block(scheme, type, temp_block, degree, left_nonleaf, left_info->size + i+1);
@@ -193,11 +204,11 @@ void IndexManager::fresh_information(string& scheme, Type type, int num, int deg
 	treenode* tree_info = bg.addr<treenode>();
 	int i;
 	Value temp_value;
-	temp_value = get_value(scheme, type, num, degree, i);
+	temp_value = get_value(bg,scheme, type, num, degree, i);
 	if (temp_value.greater_than(old_value, type))	return;
 	for (i = 0; i < tree_info->size; i++)
 	{
-		temp_value = get_value(scheme, type, num, degree, i);
+		temp_value = get_value(bg,scheme, type, num, degree, i);
 		if (Value::cmp(type, old_value, temp_value) == 0) break;
 	}
 	if (i == tree_info->size) throw "Why not find father_info";
@@ -209,7 +220,7 @@ Value IndexManager::find_min(string& scheme, Type type, int num, int degree)
 	treenode* tree_info = bg.addr<treenode>();
 	if (tree_info->Is_leaf == true)
 	{
-		Value temp_value = get_value(scheme, type, num, degree, 0);
+		Value temp_value = get_value(bg,scheme, type, num, degree, 0);
 		return temp_value;
 	}
 	else
@@ -218,6 +229,12 @@ Value IndexManager::find_min(string& scheme, Type type, int num, int degree)
 		Value temp_value =find_min(scheme, type, block_index, degree);
 		return temp_value;
 	}
+}
+void IndexManager::change_fa(string&scheme, Type type, int num, int  degree, int new_fa)
+{
+	BlockGuard bg(block_mgr, scheme, num);
+	treenode* tree_info = bg.addr<treenode>(0);
+	tree_info->fa = new_fa;
 }
 void IndexManager::work(string& scheme, const Relation& rel, int field_index, const Value& value, RecordPosition record_pos, int num, int degree)
 {
@@ -232,7 +249,7 @@ void IndexManager::work(string& scheme, const Relation& rel, int field_index, co
 		int i;
 		for (i = 0; i < size; i++)
 		{
-			temp_value = get_value(scheme, type, num, degree, i);
+			temp_value = get_value(bg,scheme, type, num, degree, i);
 			if (temp_value.greater_than(value, type))
 				break;
 		}
@@ -241,7 +258,7 @@ void IndexManager::work(string& scheme, const Relation& rel, int field_index, co
 		if (tree_info->size == degree)
 		{
 			int new_num = get_new_block(scheme);
-			BlockGuard new_bg(block_mgr, scheme, num);
+			BlockGuard new_bg(block_mgr, scheme, new_num);
 			treenode* new_tree = new_bg.addr<treenode>();
 			new_tree->fa = tree_info->fa;
 			new_tree->Is_leaf = tree_info->Is_leaf;
@@ -249,17 +266,20 @@ void IndexManager::work(string& scheme, const Relation& rel, int field_index, co
 			new_tree->before = num;
 			new_tree->next = tree_info->next;
 			tree_info->next = new_num;
-			new_tree->size = degree - degree / 2;
+			new_tree->size = degree - degree / 2-1;
+			tree_info->size = degree / 2;
 			int temp_block;
 			for (int i = degree/2; i < degree; i++)
 			{
-				if (i != 0)
+				if (i != degree/2)
 				{
-					temp_value = get_value(scheme, type, num, degree, i);
+					temp_value = get_value(bg,scheme, type, num, degree, i);
 					insert_value(scheme, type, temp_value, degree, new_num, i - degree / 2 - 1);
 				}
-				temp_block = get_block(scheme, type, num, degree, i);
-				insert_block(scheme, type, temp_block, degree,new_num, i - degree/2);
+				temp_block = get_block(scheme, type, num, degree, i+1);
+				change_fa(scheme, type, temp_block, degree, new_num);
+				insert_block(scheme
+					, type, temp_block, degree,new_num, i - degree/2);
 			}
 			new_bg.set_modified();
 			if (tree_info->Is_root == false)
@@ -270,7 +290,7 @@ void IndexManager::work(string& scheme, const Relation& rel, int field_index, co
 				
 				for (i = 0; i < fa_head->size; i++)
 				{
-					temp_value = get_value(scheme, type, tree_info->fa, degree, i);
+					temp_value = get_value(fa_bg,scheme, type, tree_info->fa, degree, i);
 					if (temp_value.greater_than(min_value, type))	break;
 				}
 				shift_value(scheme, type, degree, tree_info->fa, i, 1);
@@ -278,16 +298,23 @@ void IndexManager::work(string& scheme, const Relation& rel, int field_index, co
 				shift_block(scheme, type, degree, tree_info->fa, i + 1, 1);
 				insert_block(scheme, type, new_num, degree, tree_info->fa, i + 1);
 				fa_head->size++;
+				if (tree_info->fa == 258)
+					//cout << "fuck:" << fa_head->size << endl;
+				if (fa_head->size == 100)	getchar();
 
 			}
 			else
 			{
 				int new_root = get_new_block(scheme);
+				BlockGuard tree_bg(block_mgr, scheme, 0);
+				tree_information* tot_info = tree_bg.addr<tree_information>(0);
+				tot_info->root = new_root;
+				tree_bg.set_modified();
 				tree_info->Is_root = false;
 				new_tree->Is_root = false;
 				tree_info->fa = new_root;
 				new_tree->fa = new_root;
-				BlockGuard root_bg(block_mgr, scheme, num);
+				BlockGuard root_bg(block_mgr, scheme, new_root);
 				treenode* root_info = root_bg.addr<treenode>();
 				root_info->fa = 0;
 				root_info->Is_leaf = false;
@@ -295,8 +322,8 @@ void IndexManager::work(string& scheme, const Relation& rel, int field_index, co
 				root_info->next = 0;
 				root_info->before = 0;
 				root_info->size = 1;
-				Value new_value = get_value(scheme, type, new_num, degree, 0);
-				insert_value(scheme, type, value, degree, new_num, 0);
+				Value new_value = find_min(scheme, type, new_num, degree);
+				insert_value(scheme, type, new_value, degree, new_root, 0);
 				insert_block(scheme, type, num, degree, new_root, 0);
 				insert_block(scheme, type, new_num, degree, new_root, 1);
 				root_bg.set_modified();
@@ -314,9 +341,14 @@ void IndexManager::work(string& scheme, const Relation& rel, int field_index, co
 		int i;
 		for (i = 0; i < size; i++)
 		{
-			temp_value = get_value(scheme, type, num, degree, i);
+			temp_value = get_value(bg,scheme, type, num, degree, i);
 			if (temp_value.greater_than(value, type))
 				break;
+		}
+		if (Value::cmp(type, temp_value, value) == 0)
+		{
+			insert_record(scheme, type, record_pos, degree, num, i);
+			return;
 		}
 		shift_value(scheme, type, degree, num, i, 1);
 		insert_value(scheme, type, value, degree, num, i);
@@ -328,8 +360,10 @@ void IndexManager::work(string& scheme, const Relation& rel, int field_index, co
 		// 叶子节点已满
 		if (tree_info->size == degree)
 		{
+			//std::cout << 1;
 			int new_num = get_new_block(scheme);
-			BlockGuard new_bg(block_mgr, scheme, num);
+			//std::cout << new_num;
+			BlockGuard new_bg(block_mgr, scheme, new_num);
 			treenode* new_tree = new_bg.addr<treenode>();
 			new_tree->fa = tree_info->fa;
 			new_tree->Is_leaf = tree_info->Is_leaf;
@@ -338,14 +372,18 @@ void IndexManager::work(string& scheme, const Relation& rel, int field_index, co
 			tree_info->next = new_num;
 			new_tree->before = num;
 			new_tree->size = degree - degree / 2;
+			//std::cout << "1";
 			RecordPosition temp_record;
 			for (int i = degree / 2; i < tree_info->size; i++)
 			{
-				temp_value = get_value(scheme, type, num, degree, i);
-				insert_value(scheme, type, value, degree, new_num, i - degree / 2);
-				temp_record = get_record(scheme, type, new_num, degree, i);
-				insert_record(scheme, type, record_pos, degree, new_num, i - degree / 2);
+				temp_value = get_value(bg,scheme, type, num, degree, i);
+				//cout << temp_value.INT << endl;
+				insert_value(scheme, type, temp_value, degree, new_num, i - degree / 2);
+				temp_record = get_record(scheme, type, num, degree, i);
+				insert_record(scheme, type, temp_record, degree, new_num, i - degree / 2);
+				//cout << temp_record.pos << " " << " " << i - degree / 2 << endl;
 			}
+			//cout << "1";
 			tree_info->size = degree / 2;
 			new_bg.set_modified();
 			// 该叶子节点不是根节点
@@ -353,11 +391,12 @@ void IndexManager::work(string& scheme, const Relation& rel, int field_index, co
 			{
 				BlockGuard fa_bg(block_mgr, scheme, tree_info->fa);
 				struct treenode* fa_head = fa_bg.addr<treenode>();
+				fa_bg.set_modified();
 				Value new_value;
-				new_value = get_value(scheme, type, new_num, degree, 0);
+				new_value = get_value(new_bg,scheme, type, new_num, degree, 0);
 				for (i = 0; i < fa_head->size; i++)
 				{
-					temp_value = get_value(scheme, type, tree_info->fa, degree, i);
+					temp_value = get_value(fa_bg,scheme, type, tree_info->fa, degree, i);
 					if (temp_value.greater_than(new_value, type))	break;
 				}
 				shift_value(scheme, type, degree, tree_info->fa, i, 1);
@@ -370,11 +409,12 @@ void IndexManager::work(string& scheme, const Relation& rel, int field_index, co
 			else
 			{
 				int new_root = get_new_block(scheme);
+				//cout << new_root;
 				tree_info->Is_root = false;
 				new_tree->Is_root = false;
 				tree_info->fa = new_root;
 				new_tree->fa = new_root;
-				BlockGuard root_bg(block_mgr, scheme, num);
+				BlockGuard root_bg(block_mgr, scheme, new_root);
 				treenode* root_info = root_bg.addr<treenode>();
 				root_info->fa = 0;
 				root_info->before = 0;
@@ -382,11 +422,16 @@ void IndexManager::work(string& scheme, const Relation& rel, int field_index, co
 				root_info->Is_root = true;
 				root_info->next = 0;
 				root_info->size = 1;
-				Value new_value = get_value(scheme, type, new_num, degree, 0);
-				insert_value(scheme, type, value, degree, new_num, 0);
+				Value new_value = get_value(new_bg,scheme, type, new_num, degree, 0);
+				//cout << "shit"<<new_value.INT;
+				insert_value(scheme, type, new_value, degree, new_root, 0);
 				insert_block(scheme, type, num, degree, new_root, 0);
 				insert_block(scheme, type, new_num, degree, new_root, 1);
 				root_bg.set_modified();
+				BlockGuard tree_bg(block_mgr, scheme, 0);
+				tree_information* tot_info = tree_bg.addr<tree_information>(0);
+				tot_info->root = new_root;
+				tree_bg.set_modified();
 			}
 		}
 		
@@ -395,14 +440,26 @@ void IndexManager::work(string& scheme, const Relation& rel, int field_index, co
 void IndexManager::add_item(const Relation& rel, int field_index, const Value& value, RecordPosition record_pos)
 {
 	string& scheme = Files::index(rel.name, field_index);
-	tree_information tree_info = get_information(rel, field_index, scheme);
+	if (block_mgr->file_blocks(scheme) == 0)
+	{
+		block_mgr->file_append_block(scheme);
+		BlockGuard bg_init(block_mgr, scheme, 0);
+		tree_information* head = bg_init.addr<tree_information>();
+		// degree = {Is_root + Is_leaf + fa + size} + data[degree] + block_pos[degree] + rec_address[degree]
+		int degree = (BLOCK_SIZE - (sizeof(treenode)))/ (rel.fields[field_index].type.length() + sizeof(int) + sizeof(RecordPosition));
+		head->degree = degree;
+		head->root = -1;
+		bg_init.set_modified();
+	}
+	BlockGuard bg_init(block_mgr, scheme, 0);
+	tree_information* tree_info = (bg_init.addr<tree_information>());
 	// degree = {Is_root + Is_leaf + fa + size} + data[degree] + block_pos[degree] + rec_address[degree]
-	int degree = tree_info.degree;
-	if (tree_info.root == -1)
+	int degree = tree_info->degree;
+	if (tree_info->root == -1)
 	{
 		int num = get_new_block(scheme);
 		BlockGuard bg(block_mgr, scheme, num);
-		tree_info.root = 1;
+		tree_info->root = 1;
 		struct treenode* new_node = bg.addr<struct treenode>();
 		new_node->fa = 0;
 		new_node->next = 0;
@@ -414,12 +471,20 @@ void IndexManager::add_item(const Relation& rel, int field_index, const Value& v
 		insert_value(scheme, type, value, degree, 1, 0);
 		insert_record(scheme, type, record_pos, degree, 1, 0);
 		bg.set_modified();
-		return;
 	}
 	else
-		work(scheme, rel, field_index, value, record_pos, tree_info.root, degree);
+		work(scheme, rel, field_index, value, record_pos, tree_info->root, degree);
 }
-Nullable<RecordPosition> IndexManager::find(string& scheme, Type type, int degree, Value value, int num)
+Nullable<RecordPosition> IndexManager::find(const Relation& rel, int field_index, Value value)
+{
+	string& scheme = Files::index(rel.name, field_index);
+	tree_information tree_info = get_information(rel, field_index, scheme);
+	int degree = tree_info.degree;
+	Type type= rel.fields[field_index].type;
+	int root = tree_info.root;
+		return find_record(scheme, type, degree,value, root);
+}
+Nullable<RecordPosition> IndexManager::find_record(string& scheme, Type type, int degree, Value value, int num)
 {
 	BlockGuard bg(block_mgr, scheme, num);
 	treenode tree_info = *bg.addr<treenode>();
@@ -428,9 +493,10 @@ Nullable<RecordPosition> IndexManager::find(string& scheme, Type type, int degre
 		int i;
 		int size = tree_info.size;
 		Value temp_value;
+		BlockGuard value_bg(block_mgr, scheme, num);
 		for (i = 0; i < size; i++)
 		{
-			temp_value = get_value(scheme, type, num, degree, i);
+			temp_value = get_value(value_bg,scheme, type, num, degree, i);
 			if (Value::cmp(type,value,temp_value) == 0) break;
 		}
 		if (i == size)	return Null();
@@ -441,12 +507,14 @@ Nullable<RecordPosition> IndexManager::find(string& scheme, Type type, int degre
 		int i;
 		int size = tree_info.size;
 		Value temp_value;
+		BlockGuard value_bg(block_mgr, scheme, num);
 		for (i = 0; i < size; i++)
 		{
-			temp_value = get_value(scheme, type, num, degree, i);
-			if (temp_value.greater_than(value, type) == 0) break;
+			temp_value = get_value(value_bg,scheme, type, num, degree, i);
+			if (Value::cmp(type,temp_value,value) > 0) break;
 		}
-		return find(scheme, type, degree, value, i);
+		int temp_block = get_block(scheme, type, num, degree, i);
+		return find_record(scheme, type, degree, value, temp_block);
 	}
 }
 void IndexManager::remove_single_item(string& scheme, Type type, int degree, Value value, int num)
@@ -459,7 +527,7 @@ void IndexManager::remove_single_item(string& scheme, Type type, int degree, Val
 	{
 		for (i = 0; i < tree_info->size; i++)
 		{
-			temp_value = get_value(scheme, type, num, degree, i);
+			temp_value = get_value(bg,scheme, type, num, degree, i);
 			if (temp_value.greater_than(value, type))
 				break;
 		}
@@ -481,7 +549,7 @@ void IndexManager::remove_single_item(string& scheme, Type type, int degree, Val
 				{
 					neighbor_bg.set_modified();
 					old_value = find_min(scheme, type, neighbor_num, degree);
-					new_value = get_value(scheme, type, neighbor_num, degree, 0);
+					new_value = get_value(neighbor_bg,scheme, type, neighbor_num, degree, 0);
 					fresh_information(scheme, type, neighbor_info->fa, degree, old_value, new_value);
 					shift_value(scheme, type, degree, neighbor_num, 1, -1);
 					int temp_block = get_block(scheme, type, neighbor_num, degree, 0);
@@ -508,7 +576,7 @@ void IndexManager::remove_single_item(string& scheme, Type type, int degree, Val
 			{
 				neighbor_bg.set_modified();
 				old_value = find_min(scheme, type, num, degree);
-				new_value = get_value(scheme, type, neighbor_num, degree, neighbor_info->size-1);
+				new_value = get_value(neighbor_bg,scheme, type, neighbor_num, degree, neighbor_info->size-1);
 				new_block = get_block(scheme, type, neighbor_num, degree, neighbor_info->size);
 				fresh_information(scheme, type, tree_info->fa, degree, old_value, new_value);
 				shift_value(scheme, type, degree, neighbor_num, 0, 1);
@@ -530,7 +598,7 @@ void IndexManager::remove_single_item(string& scheme, Type type, int degree, Val
 	{
 		for (i = 0; i < tree_info->size; i++)
 		{
-			temp_value = get_value(scheme, type, num, degree, i);
+			temp_value = get_value(bg,scheme, type, num, degree, i);
 			if (Value::cmp(type, value, temp_value) == 0)
 				break;
 		}
@@ -561,8 +629,8 @@ void IndexManager::remove_single_item(string& scheme, Type type, int degree, Val
 					if (neighbor_info->size > degree / 2)
 					{
 						neighbor_bg.set_modified();
-						old_value = get_value(scheme, type, neighbor_num, degree, 0);
-						new_value = get_value(scheme, type, neighbor_num, degree, 1);
+						old_value = get_value(neighbor_bg,scheme, type, neighbor_num, degree, 0);
+						new_value = get_value(neighbor_bg, scheme, type, neighbor_num, degree, 1);
 						fresh_information(scheme, type, neighbor_info->fa, degree, old_value, new_value);
 						shift_value(scheme, type, degree, neighbor_num, 1, -1);
 						RecordPosition temp_record = get_record(scheme, type, neighbor_num, degree, 0);
@@ -588,8 +656,8 @@ void IndexManager::remove_single_item(string& scheme, Type type, int degree, Val
 			if (neighbor_info->size > degree / 2)
 			{
 				neighbor_bg.set_modified();
-				old_value = get_value(scheme, type, num, degree, 0);
-				new_value = get_value(scheme, type, neighbor_num, degree, neighbor_info->size - 1);
+				old_value = get_value(bg,scheme, type, num, degree, 0);
+				new_value = get_value(neighbor_bg, scheme, type, neighbor_num, degree, neighbor_info->size - 1);
 				fresh_information(scheme, type, tree_info->fa, degree, old_value, new_value);
 				shift_value(scheme, type, degree, neighbor_num, 0, 1);
 				insert_value(scheme, type, new_value, degree, num, tree_info->size);
