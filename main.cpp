@@ -64,7 +64,12 @@ int main(void)
 			{
 				ss_expr >> str;
 				cout << "Executing file: " << str << endl;
-				execute_file(executor, str);
+				vector<string> exprs = get_exprs_in_file(executor, str);
+				for (string& str : exprs)
+				{
+					cout << "Executing command: " << str << endl;
+					execute_expr(executor, str);
+				}
 			}
 		}
 		else

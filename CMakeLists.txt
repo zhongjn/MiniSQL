@@ -50,6 +50,7 @@ set(tests
 	"test/03_scanner.cpp"
 	"test/04_parser.cpp"
 	"test/05_executor.cpp"
+	"test/06_sqltest.cpp"
 )
 
 add_executable (MiniSQL "main.cpp" ${project_headers} ${project_sources})

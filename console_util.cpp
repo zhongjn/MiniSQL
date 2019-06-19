@@ -85,11 +85,12 @@ void draw_line(int* max, int size)
 	cout << '+' << endl;
 }
 
-void execute_file(QueryExecutor& executor, string filename)
+vector<string> get_exprs_in_file(QueryExecutor& executor, string filename)
 {
 	ifstream ifs = ifstream(filename, ios::in);
 	string str;
 	char c;
+	vector<string> ret;
 	if (!ifs.good())
 	{
 		cout << "Fail to open file" << endl;
@@ -117,14 +118,9 @@ void execute_file(QueryExecutor& executor, string filename)
 				break;
 			}
 			str = ss_expr.str();
-			cout << "Executing command: " << str << endl;
-			QueryResult result = executor.execute(QueryParser().parse(QueryLexer().tokenize(str)));
-			if (result.relation.fields.size() != 0)
-			{
-				// Show select results
-				disp_records(result);
-			}
-			cout << result.prompt << endl << endl;
+			//cout << "Executing command: " << str << endl;
+			ret.push_back(str);
 		}
 	}
+	return ret;
 }
