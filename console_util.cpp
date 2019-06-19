@@ -3,7 +3,7 @@
 #include <iostream>
 #include <fstream>
 
-//#define DISABLE_PROMPT
+#define DISABLE_PROMPT
 
 using namespace std;
 
