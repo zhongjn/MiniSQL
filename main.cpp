@@ -20,6 +20,7 @@ int main(void)
 	cout << "MiniSQL v1.0" << endl;
 	while (true)
 	{
+        eng.flush();
         cout << endl;
 		str = "";
 		cout << ">>>";

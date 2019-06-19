@@ -27,6 +27,10 @@ public:
 
     }
 
+    void flush() {
+        bm.flush();
+    }
+
     void add_relation(const Relation& relation) {
         cm.add_relation(relation);
         rm.add_relation(relation);
