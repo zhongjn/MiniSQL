@@ -8,6 +8,7 @@ TEST_CASE(table_select_0_sql) {
 	StorageEngine eng;
 	QueryExecutor executor(&eng);
 	vector<string> exprs = get_exprs_in_file(executor, "sql/table-select-0.sql");
+	cout << endl;
 	for (string& str : exprs)
 	{
 		cout << "Executing command: " << str << endl;

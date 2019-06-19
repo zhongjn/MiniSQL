@@ -100,6 +100,11 @@ vector<string> get_exprs_in_file(QueryExecutor& executor, string filename)
 		while (true)
 		{
 			stringstream ss_expr = stringstream();
+			while (!ifs.eof() && ifs.get() == '\n');
+			if (!ifs.eof())
+			{
+				ifs.unget();
+			}
 			while (true)
 			{
 				c = ifs.get();
