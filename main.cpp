@@ -35,6 +35,7 @@ int main(void)
 			if (c == '\n')
 			{
 				cout << "-->";
+				c = ' ';
 			}
 			ss_expr << c;
 		}
