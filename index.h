@@ -4,15 +4,23 @@
 #include "block_manager.h"
 // TODO: B-Tree���
 class IndexIterator {
-    Type _value_type;
-    Nullable<Value> _start, _end;
 public:
-    bool next() { throw logic_error("not implemented"); }
-    RecordPosition current() { throw logic_error("not implemented"); }
+	bool next() 
+	{
+		i++;
+		return i < x.size();
+	}
+    RecordPosition current() 
+	{
+		return x[i];
+	}
+	IndexIterator(vector<RecordPosition> rp) : x(move(rp)) {};
+private:
+	vector<RecordPosition> x;
+	int i = -1;
 };
 
 struct IndexUsage {
 	int field_index;
 	Nullable<Value> from, to;
-	bool from_exclusive, to_exclusive;
 };

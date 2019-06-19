@@ -81,8 +81,7 @@ Nullable<IndexUsage> QueryExecutor::search_index(BinaryExpression* exp, Relation
                 ptr_field->resolve(relation);
                 candidates.push_back(IndexUsage{
                     ptr_field->get_field(),
-                    Null(), Null(),
-                    false, false
+                    Null(), Null()
                     });
             }
 
