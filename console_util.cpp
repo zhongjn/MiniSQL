@@ -5,17 +5,6 @@
 
 using namespace std;
 
-void execute_expr(QueryExecutor& executor, string expr)
-{
-	QueryResult result = executor.execute(QueryParser().parse(QueryLexer().tokenize(expr)));
-	if (result.relation.fields.size() != 0)
-	{
-		// Show select results
-		disp_records(result);
-	}
-	cout << result.prompt << endl << endl;
-}
-
 void disp_records(QueryResult& result)
 {
 	int* max = new int[result.relation.fields.size()];
@@ -72,6 +61,18 @@ void disp_records(QueryResult& result)
 	delete[] max;
 }
 
+bool execute_safe_print(QueryExecutor& executor, const string& expr)
+{
+    QueryResult result = execute_safe(executor, expr);
+    if (result.relation.fields.size() != 0)
+    {
+        // Show select results
+        disp_records(result);
+    }
+    cout << result.prompt << endl << endl;
+    return !result.failed;
+}
+
 void draw_line(int* max, int size)
 {
 	for (int i = 0; i < size; i++)
@@ -85,12 +86,12 @@ void draw_line(int* max, int size)
 	cout << '+' << endl;
 }
 
-vector<string> get_exprs_in_file(QueryExecutor& executor, string filename)
+
+void execute_file(QueryExecutor& executor, const string& filename)
 {
 	ifstream ifs = ifstream(filename, ios::in);
 	string str;
 	char c;
-	vector<string> ret;
 	if (!ifs.good())
 	{
 		cout << "Fail to open file" << endl;
@@ -100,11 +101,6 @@ vector<string> get_exprs_in_file(QueryExecutor& executor, string filename)
 		while (true)
 		{
 			stringstream ss_expr = stringstream();
-			while (!ifs.eof() && ifs.get() == '\n');
-			if (!ifs.eof())
-			{
-				ifs.unget();
-			}
 			while (true)
 			{
 				c = ifs.get();
@@ -123,9 +119,12 @@ vector<string> get_exprs_in_file(QueryExecutor& executor, string filename)
 				break;
 			}
 			str = ss_expr.str();
-			//cout << "Executing command: " << str << endl;
-			ret.push_back(str);
+			cout << "Executing command: " << str << endl;
+            bool succeeded = execute_safe_print(executor, str);
+            if (!succeeded) {
+                cout << "Executing aborted due to previous error." << endl;
+                break;
+            }
 		}
 	}
-	return ret;
 }

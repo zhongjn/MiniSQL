@@ -8,16 +8,7 @@
 #include "query_executor.h"
 #include "console_util.h"
 
-
 using namespace std;
-
-
-void match(const regex& r, const char* str) {
-    match_results<const char*> mr;
-    while (regex_search(str, mr, r)) {
-        str = mr.suffix().first;
-    }
-}
 
 int main(void)
 {
@@ -29,6 +20,7 @@ int main(void)
 	cout << "MiniSQL v1.0" << endl;
 	while (true)
 	{
+        cout << endl;
 		str = "";
 		cout << ">>>";
 		ss_expr = stringstream();
@@ -76,7 +68,7 @@ int main(void)
 		{
 			str = ss_expr.str();
 			cout << "Executing command: " << str << endl;
-			execute_expr(executor, str);
+			execute_safe_print(executor, str);
 		}
 		while (getchar() != '\n');
 	}
