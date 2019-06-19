@@ -123,7 +123,7 @@ void execute_file(QueryExecutor& executor, const string& filename)
             bool succeeded = execute_safe_print(executor, str);
             if (!succeeded) {
                 cout << "Executing aborted due to previous error." << endl;
-                break;
+                //break;
             }
 		}
 	}

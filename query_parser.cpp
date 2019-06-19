@@ -58,7 +58,7 @@ BinaryExpression::Operator QueryParser::binary_op(const string& op) {
 }
 
 pair<Type, Value> QueryParser::literal(const string& lit) {
-    if (lit.front() == '\'' && lit.back() == '\'') {
+    if (lit.front() == '\'' && lit.back() == '\'' || lit.front() == '"' && lit.back() == '"') {
         // string
         string value = lit.substr(1, lit.length() - 2);
         return pair<Type, Value>(Type::create_CHAR(value.length() + 1), Value::create_CHAR(move(value)));
