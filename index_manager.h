@@ -110,7 +110,11 @@ public:
 	void remove_item(const Relation& rel, int field_index, const Value& value);
 	// TODO: 对一列添加一个值
 	void add_item(const Relation& rel, int field_index, const Value& value, RecordPosition record_pos);
-	void remove_index(const Relation& rel, int field_index){}
+	void remove_index(const Relation& rel, int field_index)
+	{
+		string& scheme = Files::index(rel.name, field_index);
+		remove(scheme.c_str());
+	}
 	Nullable<RecordPosition> find(const Relation& rel, int field_index, Value value);
 private:
 	BlockManager* block_mgr;

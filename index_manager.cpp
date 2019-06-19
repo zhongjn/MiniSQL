@@ -674,6 +674,7 @@ void IndexManager::remove_single_item(string& scheme, Type type, int degree, Val
 }
 void IndexManager::remove_item(const Relation& rel, int field_index, const Value& value)
 {
+	return;
 	string& scheme = Files::index(rel.name, field_index);
 	Type type = rel.fields[field_index].type;
 	tree_information tree_info = get_information(rel, field_index, scheme);
