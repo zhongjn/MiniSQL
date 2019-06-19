@@ -41,9 +41,10 @@ void disp_records(QueryResult& result)
 		}
 	}
 	draw_line(max, result.relation.fields.size());
+	setiosflags(ios::left);
 	for (int i = 0; i < result.relation.fields.size(); i++)
 	{
-		cout << "| " << setw(max[i]) << setiosflags(ios::left) << setfill(' ') << result.relation.fields[i].name << ' ';
+		cout << "| " << setfill(' ') << setw(max[i]) << result.relation.fields[i].name << ' ';
 	}
 	cout << '|' << endl;
 	draw_line(max, result.relation.fields.size());
@@ -51,18 +52,18 @@ void disp_records(QueryResult& result)
 	{
 		for (int j = 0; j < result.relation.fields.size(); j++)
 		{
-			cout << "| " << setw(max[j]) << setiosflags(ios::left) << setfill(' ');
+			cout << "| " << setfill(' ') << setw(max[j]);
 			if (result.relation.fields[j].type.tag == Type::Tag::INT)
 			{
-				cout << ' ' << result.records[i].values[j].INT << ' ';
+				cout << result.records[i].values[j].INT << ' ';
 			}
 			else if (result.relation.fields[j].type.tag == Type::Tag::FLOAT)
 			{
-				cout << ' ' << result.records[i].values[j].FLOAT << ' ';
+				cout << result.records[i].values[j].FLOAT << ' ';
 			}
 			else if (result.relation.fields[j].type.tag == Type::Tag::CHAR)
 			{
-				cout << ' ' << result.records[i].values[j].CHAR << ' ';
+				cout << result.records[i].values[j].CHAR << ' ';
 			}
 		}
 		cout << '|' << endl;

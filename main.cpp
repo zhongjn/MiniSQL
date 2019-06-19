@@ -21,7 +21,8 @@ void match(const regex& r, const char* str) {
 
 int main(void)
 {
-	QueryExecutor executor = QueryExecutor(new StorageEngine());
+	StorageEngine eng;
+	QueryExecutor executor = QueryExecutor(&eng);
 	string str;
 	stringstream ss_expr;
 	char c;
