@@ -51,7 +51,7 @@ void UniaryExpression::resolve(const Relation & rel) {
         _resolved = true;
     }
     else {
-        throw logic_error("dedude failed");
+        throw logic_error("decude failed");
     }
 }
 
@@ -62,14 +62,21 @@ bool in_range(V v, V from_in, V to_in) {
     return v >= from_in && v <= to_in;
 }
 
-bool is_rel_op(Op2 op) {
+bool is_cmp_op(Op2 op) {
     return in_range(op, Op2::EQ, Op2::GE);
+}
+
+bool is_logic_op(Op2 op) {
+    return in_range(op, Op2::AND, Op2::OR);
 }
 
 bool is_alg_op(Op2 op) {
     return in_range(op, Op2::ADD, Op2::DIV);
 }
 
+static void deduce_failed() {
+    throw logic_error("deduce failed");
+}
 
 Type deduce_type(Op2 op, Type t1, Type t2) {
     using T = Type::Tag;
@@ -84,15 +91,23 @@ Type deduce_type(Op2 op, Type t1, Type t2) {
             }
         }
         else {
-            throw logic_error("dedude failed");
+            deduce_failed();
         }
     }
-    else if (is_rel_op(op)) {
+    else if (is_cmp_op(op)) {
         if (t1.tag == t2.tag) {
             t.tag = T::INT;
         }
         else {
-            throw logic_error("dedude failed");
+            deduce_failed();
+        }
+    }
+    else if (is_logic_op(op)) {
+        if (t1.tag == T::INT && t2.tag == T::INT) {
+            t.tag = T::INT;
+        }
+        else {
+            deduce_failed();
         }
     }
     else if (op == Op2::ADD && t1.tag == T::CHAR && t2.tag == T::CHAR) { // string add
@@ -100,7 +115,7 @@ Type deduce_type(Op2 op, Type t1, Type t2) {
         t.CHAR.len = t1.CHAR.len + t2.CHAR.len;
     }
     else {
-        throw logic_error("dedude failed");
+        deduce_failed();
     }
     return t;
 }
@@ -108,7 +123,7 @@ Type deduce_type(Op2 op, Type t1, Type t2) {
 #define OP_CASE(case_op, fn) case BinaryExpression::Operator::case_op: return v1 fn v2;
 
 template<typename V1, typename V2>
-int do_rel_op(Op2 op, V1 v1, V2 v2) {
+int do_cmp_op(Op2 op, V1 v1, V2 v2) {
     switch (op)
     {
         OP_CASE(EQ, == );
@@ -117,6 +132,16 @@ int do_rel_op(Op2 op, V1 v1, V2 v2) {
         OP_CASE(GT, > );
         OP_CASE(LE, <= );
         OP_CASE(GE, >= );
+        default: throw logic_error("Unsupported operator.");
+    }
+}
+
+template<typename V1, typename V2>
+int do_logic_op(Op2 op, V1 v1, V2 v2) {
+    switch (op)
+    {
+        OP_CASE(AND, &&);
+        OP_CASE(OR, || );
         default: throw logic_error("Unsupported operator.");
     }
 }
@@ -140,15 +165,16 @@ Value BinaryExpression::eval(const Record & record) {
     switch (_r1->type().tag)
     {
         case Type::Tag::CHAR:
-            if (is_rel_op(_op)) vr.INT = do_rel_op(_op, v1.CHAR, v2.CHAR);
+            if (is_cmp_op(_op)) vr.INT = do_cmp_op(_op, v1.CHAR, v2.CHAR);
             else if (_op == Operator::ADD) vr.CHAR = v1.CHAR + v2.CHAR;
             break;
         case Type::Tag::INT:
-            if (is_rel_op(_op)) vr.INT = do_rel_op(_op, v1.INT, v2.INT);
+            if (is_cmp_op(_op)) vr.INT = do_cmp_op(_op, v1.INT, v2.INT);
+            else if (is_logic_op(_op)) vr.INT = do_logic_op(_op, v1.INT, v2.INT);
             else if (is_alg_op(_op)) vr.INT = do_alg_op(_op, v1.INT, v2.INT);
             break;
         case Type::Tag::FLOAT:
-            if (is_rel_op(_op)) vr.INT = do_rel_op(_op, v1.FLOAT, v2.FLOAT);
+            if (is_cmp_op(_op)) vr.INT = do_cmp_op(_op, v1.FLOAT, v2.FLOAT);
             else if (is_alg_op(_op)) vr.FLOAT = do_alg_op(_op, v1.FLOAT, v2.FLOAT);
             break;
         default: throw logic_error("Unsupported type.");

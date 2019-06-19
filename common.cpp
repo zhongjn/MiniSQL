@@ -13,14 +13,14 @@ int Type::length() const {
 
 FieldData Field::to_file() const {
     if (name.length() >= NAME_LENGTH) throw logic_error("Exceeded maximum name length");
-    // if (index_name.length() >= NAME_LENGTH) throw logic_error("Exceeded maximum index name length");
+    if (index_name.length() >= NAME_LENGTH) throw logic_error("Exceeded maximum index name length");
 
     FieldData f;
     strcpy(f.name, name.c_str());
     f.type = type;
     f.unique = unique;
     f.has_index = has_index;
-    // strcpy(f.index_name, index_name.c_str());
+    strcpy(f.index_name, index_name.c_str());
     return f;
 }
 
@@ -29,7 +29,7 @@ void Field::from_file(const FieldData & f) {
     type = f.type;
     unique = f.unique;
     has_index = f.has_index;
-    // index_name = f.index_name;
+    index_name = f.index_name;
 }
 
 void Relation::update() {

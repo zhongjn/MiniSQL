@@ -13,6 +13,7 @@ set(project_headers
 	"block_manager.h"
 	"catalog_manager.h"
 	"common.h"
+	"console_util.h"
 	"expression.h"
 	"files.h"
 	"index.h"
@@ -31,6 +32,7 @@ set(project_sources
     "block_manager.cpp"
 	"catalog_manager.cpp"
 	"common.cpp"
+	"console_util.cpp"
 	"expression.cpp"
 	"index.cpp"
 	"index_manager.cpp"
@@ -48,9 +50,16 @@ set(tests
 	"test/03_scanner.cpp"
 	"test/04_parser.cpp"
 	"test/05_executor.cpp"
+	"test/06_sqltest.cpp"
 )
 
 add_executable (MiniSQL "main.cpp" ${project_headers} ${project_sources})
 
 # Tests
 add_executable (TestEntry 	"test/test.h" "test/test.cpp" ${project_headers} ${project_sources} ${tests})
+
+add_custom_command(
+		TARGET TestEntry POST_BUILD
+		COMMAND ${CMAKE_COMMAND} -E copy_directory
+				${CMAKE_SOURCE_DIR}/sql
+				${CMAKE_CURRENT_BINARY_DIR}/sql)

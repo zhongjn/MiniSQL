@@ -94,7 +94,10 @@ BlockManager::~BlockManager()
 
 void BlockManager::flush() {
     for (auto& p : active_blocks) {
-        if (p.second.modified) block_writeback(p.first, p.second.addr);
+		if (p.second.modified)
+		{
+			block_writeback(p.first, p.second.addr);
+		}
         p.second.modified = false;
     }
     for (auto& p : active_files) {
@@ -123,6 +126,19 @@ int BlockManager::file_append_block(const string& file_path) {
 void BlockManager::file_delete(const string& file_path) {
     auto& active = active_files.find(file_path);
     if (active != active_files.end()) {
+		// clean blocks
+		vector<int> block_used;
+		for (auto& p : active_blocks) {
+			if (p.first.file_path == file_path) {
+				block_used.push_back(p.first.block_index);
+				if (p.second.use_count > 0) throw logic_error("Unexpected error. The file is still being used.");
+			}
+		}
+		for (int block_index : block_used) {
+			BlockEntry entry(file_path, block_index);
+			active_blocks.erase(entry);
+		}
+
         fclose(active->second);
         remove(file_path.c_str());
         active_files.erase(file_path);
