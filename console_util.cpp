@@ -91,14 +91,14 @@ void draw_line(int* max, int size)
 }
 
 
-void execute_file(QueryExecutor& executor, const string& filename)
+bool execute_file(QueryExecutor& executor, const string& filename)
 {
 	ifstream ifs = ifstream(filename, ios::in);
 	string str;
 	char c;
 	if (!ifs.good())
 	{
-		cout << "Fail to open file" << endl;
+        printf("Fail to open file\n");
 	}
 	else
 	{
@@ -128,9 +128,10 @@ void execute_file(QueryExecutor& executor, const string& filename)
 #endif
             bool succeeded = execute_safe_print(executor, str);
             if (!succeeded) {
-                cout << "Executing aborted due to previous error." << endl;
-                break;
+                printf("Executing aborted due to previous error.\n");
+                return false;
             }
 		}
 	}
+    return true;
 }
