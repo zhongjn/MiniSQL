@@ -36,7 +36,7 @@ public:
 	const Value& get_val() { return v; }
 };
 
-class UniaryExpression : public Expression {
+class UnaryExpression : public Expression {
 public:
     enum class Operator {
         NEG
@@ -47,7 +47,7 @@ private:
     Operator _op;
     unique_ptr<Expression> _r;
 public:
-    UniaryExpression(Operator op, unique_ptr<Expression> r) :
+    UnaryExpression(Operator op, unique_ptr<Expression> r) :
         _op(op), _r(move(r)) {}
     Value eval(const Record& record);
     const Type& type() { return _type; }

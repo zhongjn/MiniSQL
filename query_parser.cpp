@@ -112,9 +112,9 @@ bool QueryParser::factor(unique_ptr<Expression> & expr) {
     return false;
 }
 
-bool QueryParser::uniary(unique_ptr<Expression> & expr) {
+bool QueryParser::Unary(unique_ptr<Expression> & expr) {
     if (consume("-") && factor(expr)) {
-        expr = unique_ptr<Expression>(new UniaryExpression(UniaryExpression::Operator::NEG, move(expr)));
+        expr = unique_ptr<Expression>(new UnaryExpression(UnaryExpression::Operator::NEG, move(expr)));
         return true;
     }
     return factor(expr);
