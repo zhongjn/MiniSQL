@@ -2,6 +2,7 @@
 #include <iomanip>
 #include <iostream>
 #include <fstream>
+#include <ctime>
 
 //#define DISABLE_PROMPT
 
@@ -65,17 +66,23 @@ void disp_records(QueryResult& result)
 
 bool execute_safe_print(QueryExecutor& executor, const string& expr)
 {
+	clock_t start = clock();
     QueryResult result = execute_safe(executor, expr);
+	clock_t end = clock();
 #ifndef DISABLE_PROMPT
     if (result.relation.fields.size() != 0)
     {
         // Show select results
         disp_records(result);
     }
-    cout << result.prompt << endl << endl;
+    cout << result.prompt << " (" << fixed << setprecision(5) << ((double)end - start) / CLK_TCK << "s)" << endl << endl;
 #else
-    if (result.failed) cout << result.prompt << endl << endl;
+	if (result.failed)
+	{
+		cout << result.prompt << " (" << fixed << setprecision(5) << ((double)end - start) / CLK_TCK << "s)" << endl << endl;
+	}
 #endif
+	cout.unsetf(ios::fixed);
     return !result.failed;
 }
 
@@ -107,6 +114,11 @@ bool execute_file(QueryExecutor& executor, const string& filename)
 		while (true)
 		{
 			stringstream ss_expr = stringstream();
+			while (!ifs.eof() && ifs.get() == '\n');
+			if (!ifs.eof())
+			{
+				ifs.unget();
+			}
 			while (true)
 			{
 				c = ifs.get();

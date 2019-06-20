@@ -68,86 +68,90 @@ Nullable<IndexUsage> QueryExecutor::search_index(BinaryExpression* exp, Relation
                 ptr_val = static_cast<ConstantExpression*>(pcur->get_r1());
                 inverse = true;
             }
+			
 
-            for (candidate_index = 0; candidate_index < candidates.size(); ++candidate_index)
-            {
-                if (candidates[candidate_index].field_index == ptr_field->get_field())
-                {
-                    break;
-                }
-            }
-            if (candidate_index == candidates.size())
-            {
-                ptr_field->resolve(relation);
-                candidates.push_back(IndexUsage{
-                    ptr_field->get_field(),
-                    Null(), Null()
-                    });
-            }
+			if (ptr_field && ptr_val)
+			{
+				for (candidate_index = 0; candidate_index < candidates.size(); ++candidate_index)
+				{
+					if (candidates[candidate_index].field_index == ptr_field->get_field())
+					{
+						break;
+					}
+				}
+				if (candidate_index == candidates.size())
+				{
+					ptr_field->resolve(relation);
+					candidates.push_back(IndexUsage{
+						ptr_field->get_field(),
+						Null(), Null()
+						});
+				}
 
-            if (ptr_field)
-            {
-                if (op == BinaryExpression::Operator::GE)
-                {
-                    if (inverse && value_less(ptr_val->type(), ptr_val->get_val(), candidates[candidate_index].to))
-                    {
-                        // a >= X
-                        candidates[candidate_index].to = ptr_val->get_val();
-                    }
-                    else if (value_less(ptr_val->type(), candidates[candidate_index].from, ptr_val->get_val()))
-                    {
-                        // X >= a
-                        candidates[candidate_index].from = ptr_val->get_val();
-                    }
-                }
-                else if (op == BinaryExpression::Operator::GT)
-                {
-                    // exclusive ignored
-                    if (inverse && value_less(ptr_val->type(), ptr_val->get_val(), candidates[candidate_index].to))
-                    {
-                        // a > X
-                        candidates[candidate_index].to = ptr_val->get_val();
-                    }
-                    else if (value_less(ptr_val->type(), candidates[candidate_index].from, ptr_val->get_val()))
-                    {
-                        // X > a
-                        candidates[candidate_index].from = ptr_val->get_val();
-                    }
-                }
-                else if (op == BinaryExpression::Operator::LE)
-                {
-                    if (inverse && value_less(ptr_val->type(), candidates[candidate_index].from, ptr_val->get_val()))
-                    {
-                        // a <= X
-                        candidates[candidate_index].from = ptr_val->get_val();
-                    }
-                    else if (value_less(ptr_val->type(), ptr_val->get_val(), candidates[candidate_index].to))
-                    {
-                        // X <= a
-                        candidates[candidate_index].to = ptr_val->get_val();
-                    }
-                }
-                else if (op == BinaryExpression::Operator::LT)
-                {
-                    // exclusive ignored
-                    if (inverse && value_less(ptr_val->type(), candidates[candidate_index].from, ptr_val->get_val()))
-                    {
-                        // a <= X
-                        candidates[candidate_index].from = ptr_val->get_val();
-                    }
-                    else if (value_less(ptr_val->type(), ptr_val->get_val(), candidates[candidate_index].to))
-                    {
-                        // X <= a
-                        candidates[candidate_index].to = ptr_val->get_val();
-                    }
-                }
-                else if (op == BinaryExpression::Operator::EQ)
-                {
-                    candidates[candidate_index].from = candidates[candidate_index].to = ptr_val->get_val();
-                }
-            }
-            // op not AND
-            pcur = NULL;
+				if (ptr_field)
+				{
+					if (op == BinaryExpression::Operator::GE)
+					{
+						if (inverse && value_less(ptr_val->type(), ptr_val->get_val(), candidates[candidate_index].to))
+						{
+							// a >= X
+							candidates[candidate_index].to = ptr_val->get_val();
+						}
+						else if (value_less(ptr_val->type(), candidates[candidate_index].from, ptr_val->get_val()))
+						{
+							// X >= a
+							candidates[candidate_index].from = ptr_val->get_val();
+						}
+					}
+					else if (op == BinaryExpression::Operator::GT)
+					{
+						// exclusive ignored
+						if (inverse && value_less(ptr_val->type(), ptr_val->get_val(), candidates[candidate_index].to))
+						{
+							// a > X
+							candidates[candidate_index].to = ptr_val->get_val();
+						}
+						else if (value_less(ptr_val->type(), candidates[candidate_index].from, ptr_val->get_val()))
+						{
+							// X > a
+							candidates[candidate_index].from = ptr_val->get_val();
+						}
+					}
+					else if (op == BinaryExpression::Operator::LE)
+					{
+						if (inverse && value_less(ptr_val->type(), candidates[candidate_index].from, ptr_val->get_val()))
+						{
+							// a <= X
+							candidates[candidate_index].from = ptr_val->get_val();
+						}
+						else if (value_less(ptr_val->type(), ptr_val->get_val(), candidates[candidate_index].to))
+						{
+							// X <= a
+							candidates[candidate_index].to = ptr_val->get_val();
+						}
+					}
+					else if (op == BinaryExpression::Operator::LT)
+					{
+						// exclusive ignored
+						if (inverse && value_less(ptr_val->type(), candidates[candidate_index].from, ptr_val->get_val()))
+						{
+							// a <= X
+							candidates[candidate_index].from = ptr_val->get_val();
+						}
+						else if (value_less(ptr_val->type(), ptr_val->get_val(), candidates[candidate_index].to))
+						{
+							// X <= a
+							candidates[candidate_index].to = ptr_val->get_val();
+						}
+					}
+					else if (op == BinaryExpression::Operator::EQ)
+					{
+						candidates[candidate_index].from = candidates[candidate_index].to = ptr_val->get_val();
+					}
+				}
+				// op not AND
+				pcur = NULL;
+			}
         }
 
         if (pcur)
